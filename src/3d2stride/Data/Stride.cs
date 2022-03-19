@@ -1,5 +1,10 @@
 ﻿namespace StrideGenerator.Data;
 
+public class StrideOriginalIndexComparer : IComparer<Stride>
+{
+    public int Compare(Stride? x, Stride? y) => x.OriginalIndex.CompareTo(y.OriginalIndex);
+}
+
 public class Stride : /*IEquatable<Stride>,*/ IComparable<Stride>
 {
     public double[] Coordinates { get; set; } = new double[3];
@@ -9,6 +14,7 @@ public class Stride : /*IEquatable<Stride>,*/ IComparable<Stride>
     public Face Face { get; set; }
     public int OriginalIndexInFace { get; set; }
     public int Index { get; set; } = -1;
+    public int OriginalIndex { get; set; } = -1;
 
     /// <summary>
     /// Vertex colors etc

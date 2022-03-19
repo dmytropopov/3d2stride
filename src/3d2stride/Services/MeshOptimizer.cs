@@ -1,7 +1,5 @@
 ﻿using McMaster.Extensions.CommandLineUtils;
 using StrideGenerator.Data;
-using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace StrideGenerator.Services;
@@ -23,24 +21,15 @@ public class MeshOptimizer
 
         Stopwatch sw = new();
         sw.Start();
-        //var uniqueStrides = meshObject.Strides.Distinct().ToList();
-        //var optimizedMesh = new MeshObject()
-        //{
-        //    Name = meshObject.Name,
-        //    Strides = uniqueStrides
-        //};
 
-        //_console.WriteLine($"Unique stride count: {optimizedMesh.Strides.Count()}");
         sw.Stop();
         _console.WriteLine($"Time: {sw.Elapsed}");
 
         sw.Restart();
         SortedList<Stride, Stride> sorted = new();
-        //Dictionary<Stride, Stride> sortedMap = new();
-        //var index = 0;
+        SortedList<Stride, Stride> resorted = new(new StrideOriginalIndexComparer());
         foreach (var stride in meshObject.Strides)
         {
-            //var indexOfKey = sorted.IndexOfKey(stride);
             var exists = sorted.TryGetValue(stride, out var existingSorted);
             if (exists)
             {
@@ -49,47 +38,26 @@ public class MeshOptimizer
             else
             {
                 sorted.Add(stride, stride);
+                resorted.Add(stride, stride);
             }
             stride.Index = sorted.IndexOfKey(stride);
         }
-        foreach (var stride in sorted)
+
+        foreach (var stride in resorted)
         {
-            stride.Value.Index = sorted.IndexOfKey(stride.Value);
+            stride.Value.Index = resorted.IndexOfKey(stride.Value);
         }
-
-        // TODO restore stride order
-
-        //var resorted = sorted.OrderBy(s => s.Value).Select(s => s.Key).ToList();
-
-        //var optimizedFaces = new List<Face>();
-        //foreach (var face in meshObject.Faces)
-        //{
-        //    var _face = new Face { MaterialName = face.MaterialName };
-        //    foreach (var faceStride in face.Strides)
-        //    {
-        //        //_face.Strides.Add
-        //    }
-        //}
 
         var optimizedMesh = new MeshObject()
         {
             Name = meshObject.Name,
-            Strides = sorted.Select(s => s.Value).ToList(),
+            Strides = resorted.Select(s=>s.Value).ToList(),
             Faces = meshObject.Faces
         };
 
         sw.Stop();
         _console.WriteLine($"Sorted stride count: {sorted.Count()}");
         _console.WriteLine($"Sort Time: {sw.Elapsed}");
-
-        //foreach (var face in meshObject.Faces)
-        //{
-        //    optimizedMesh.Faces.Add(new Face
-        //    {
-        //        MaterialName = face.MaterialName,
-        //        Indices = face.Indices.Select(i => optimizedMesh.Strides.IndexOf(optimizedMesh.Strides.Single(o => ReferenceEquals(o, meshObject.Strides.ElementAt(i))))).ToList()
-        //    });
-        //}
 
         return optimizedMesh;
     }

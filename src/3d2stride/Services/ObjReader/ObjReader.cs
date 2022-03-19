@@ -111,10 +111,12 @@ public class ObjReader : IInputReader
                         Strides = strides.ToList()
                         //Indices = strides.Select((s, i) => (currentObject.Strides.Count()) + i).ToList()
                     };
+                    var i = 0;
                     foreach (var s in strides)
                     {
                         s.Face = face;
                         s.OriginalIndexInFace = face.Strides.IndexOf(s);
+                        s.OriginalIndex = currentObject.Strides.Count() + i++;
                     }
 
                     currentObject.Strides.AddRange(strides);
