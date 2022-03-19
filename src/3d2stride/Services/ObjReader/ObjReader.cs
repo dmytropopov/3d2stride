@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using StrideGenerator.Data;
+using System.Diagnostics;
 using System.Globalization;
 
 namespace StrideGenerator.Services.Obj;
@@ -19,7 +20,8 @@ public class ObjReader : IInputReader
     public async Task<IEnumerable<MeshObject>> ReadInput(InputSettings inputData)
     {
         using var reader = new StreamReader(inputData.FileName);
-
+        Stopwatch sw = new();
+        sw.Start();
         List<MeshObject> list = new List<MeshObject>();
 
         string? line;
@@ -96,13 +98,24 @@ public class ObjReader : IInputReader
                                 Uvs = uvs.ElementAt(int.Parse(faceIndices[1], CultureInfo.InvariantCulture) - 1),
                                 Normals = normals.ElementAt(int.Parse(faceIndices[2], CultureInfo.InvariantCulture) - 1)
                             };
-                        });
+                        }).ToArray();
+
+                    //foreach (var stride in strides)
+                    //{
+                    //    //var existinStride = currentObject.Strides.FirstOrDefault(s => s.Equals(stride));
+                    //}
 
                     var face = new Face()
                     {
                         MaterialName = currentMaterialName,
-                        Indices = strides.Select((s, i) => (currentObject.Strides.Count()) + i).ToList()
+                        Strides = strides.ToList()
+                        //Indices = strides.Select((s, i) => (currentObject.Strides.Count()) + i).ToList()
                     };
+                    foreach (var s in strides)
+                    {
+                        s.Face = face;
+                        s.OriginalIndexInFace = face.Strides.IndexOf(s);
+                    }
 
                     currentObject.Strides.AddRange(strides);
                     currentObject.Faces.Add(face);
@@ -124,6 +137,8 @@ public class ObjReader : IInputReader
 
             lineNumber++;
         }
+        sw.Stop();
+        Console.WriteLine($"Read time: {sw.Elapsed}");
 
         return list;
     }

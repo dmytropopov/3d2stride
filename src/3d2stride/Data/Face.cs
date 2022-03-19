@@ -2,6 +2,6 @@
 
 public class Face
 {
-    public List<int> Indices { get; set; } = new();
+    public List<Stride> Strides { get; set; } = new();
     public string? MaterialName { get; set; }
 }

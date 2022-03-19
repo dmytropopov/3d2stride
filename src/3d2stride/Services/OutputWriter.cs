@@ -1,6 +1,7 @@
 ﻿using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
 using StrideGenerator.Data;
+using System.Diagnostics;
 
 namespace StrideGenerator.Services;
 
@@ -17,55 +18,52 @@ public class OutputWriter : IOutputWriter
         _meshOptimizer = meshOptimizer;
     }
 
-    public async Task Write(IEnumerable<MeshObject> meshes, OutputSettings outputSettings)
+    public Task Write(IEnumerable<MeshObject> meshes, OutputSettings outputSettings)
     {
-        foreach (var meshObject in meshes)
-        {
-            _meshOptimizer.GetOptimized(meshObject);
-        }
+        using var stridesStream = File.Open(Path.ChangeExtension(outputSettings.FileName + "-strides", "bin"), FileMode.Create);
+        using var stridesWriter = new BinaryWriter(stridesStream);
+        using var indicesStream = File.Open(Path.ChangeExtension(outputSettings.FileName + "-indices", "bin"), FileMode.Create);
+        using var indicesWriter = new BinaryWriter(indicesStream);
 
-        WriteIndices(meshes, outputSettings);
-        WriteStrides(meshes, outputSettings);
-    }
+        var sw = Stopwatch.StartNew();
 
-    private void WriteStrides(IEnumerable<MeshObject> meshes, OutputSettings outputSettings)
-    {
-        using var stream = File.Open(Path.ChangeExtension(outputSettings.FileName + "-strides", "bin"), FileMode.Create);
-        using var writer = new BinaryWriter(stream);
-        foreach (var meshObject in meshes)
+        foreach (var optimized in meshes.Select(m=>_meshOptimizer.GetOptimized(m)))
         {
-            foreach (var face in meshObject.Faces)
+            foreach (var stride in optimized.Strides)
             {
-                foreach (var index in face.Indices)
+                stridesWriter.Write((float)stride.Coordinates[0]);
+                stridesWriter.Write((float)stride.Coordinates[1]);
+                stridesWriter.Write((float)stride.Coordinates[2]);
+                stridesWriter.Write((float)stride.Uvs[0]);
+                stridesWriter.Write((float)stride.Uvs[1]);
+            }
+
+            foreach (var face in optimized.Faces)
+            {
+                foreach (var stride in face.Strides)
                 {
-                    var stride = meshObject.Strides.ElementAt(index);
-                    writer.Write((float)stride.Coordinates[0]);
-                    writer.Write((float)stride.Coordinates[1]);
-                    writer.Write((float)stride.Coordinates[2]);
-                    writer.Write((float)stride.Uvs[0]);
-                    writer.Write((float)stride.Uvs[1]);
+                    indicesWriter.Write((ushort)optimized.Strides.IndexOf(stride));
                 }
+                //foreach (var index in face.Indices)
+                //{
+                //    var stride = optimized.Strides.ElementAt(index);
+                //    stridesWriter.Write((float)stride.Coordinates[0]);
+                //    stridesWriter.Write((float)stride.Coordinates[1]);
+                //    stridesWriter.Write((float)stride.Coordinates[2]);
+                //    stridesWriter.Write((float)stride.Uvs[0]);
+                //    stridesWriter.Write((float)stride.Uvs[1]);
+
+                //    indicesWriter.Write((ushort)index);
+                //}
             }
         }
-        writer.Close();
-        stream.Close();
-    }
+        sw.Stop();
+        Console.WriteLine($"Write time: {sw.Elapsed}");
+        stridesWriter.Close();
+        stridesStream.Close();
+        indicesWriter.Close();
+        indicesStream.Close();
 
-    private void WriteIndices(IEnumerable<MeshObject> meshes, OutputSettings outputSettings)
-    {
-        using var stream = File.Open(Path.ChangeExtension(outputSettings.FileName + "-indices", "bin"), FileMode.Create);
-        using var writer = new BinaryWriter(stream);
-        foreach (var meshObject in meshes)
-        {
-            foreach (var face in meshObject.Faces)
-            {
-                foreach (var index in face.Indices)
-                {
-                    writer.Write((ushort)index);
-                }
-            }
-        }
-        writer.Close();
-        stream.Close();
+        return Task.CompletedTask;
     }
 }
