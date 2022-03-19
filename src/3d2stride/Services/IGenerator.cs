@@ -1,4 +1,6 @@
-﻿public interface IGenerator
+﻿using StrideGenerator.Services;
+
+public interface IGenerator
 {
-    Task Generate();
+    Task Generate(IEnumerable<InputSettings> inputs, OutputSettings output);
 }

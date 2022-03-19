@@ -16,7 +16,7 @@ public class ObjReader : IInputReader
         _logger = logger;
     }
 
-    public async Task<IEnumerable<MeshObject>> ReadInput(InputData inputData)
+    public async Task<IEnumerable<MeshObject>> ReadInput(InputSettings inputData)
     {
         using var reader = new StreamReader(inputData.FileName);
 
@@ -29,26 +29,46 @@ public class ObjReader : IInputReader
 
         while ((line = await reader.ReadLineAsync()) != null)
         {
-            var words = line.Trim().Split(" ");
+            var words = line.Trim().Split(" ")
+                .Where(w => !string.IsNullOrEmpty(w)).ToArray(); // skip empty words (in case of double spaces etc)
+
+            if (words.Length == 0)
+            {
+                continue;
+            }
+
             var verb = words[0].ToUpperInvariant();
             switch (verb)
             {
                 case "":
                     break;
                 case "#":
+                    if (words.Length == 3)
+                    {
+                        // strange 3ds max OBJ output is not using 'O' verb
+                        if (words[1].ToLowerInvariant() == "object")
+                        {
+                            currentObject = new MeshObject()
+                            {
+                                Name = words[2]
+                            };
+                            list.Add(currentObject);
+                            currentMaterialName = null;
+                        }
+                    }
                     break;
                 case "V":
                     vertices.Add(new double[] {
-                            double.Parse(words[1], CultureInfo.InvariantCulture), // swap Y and Z
-                            double.Parse(words[3], CultureInfo.InvariantCulture),
-                            double.Parse(words[2], CultureInfo.InvariantCulture)
+                            double.Parse(words[1], CultureInfo.InvariantCulture),
+                            double.Parse(words[2], CultureInfo.InvariantCulture),
+                            double.Parse(words[3], CultureInfo.InvariantCulture)
                         });
                     break;
                 case "VN":
                     normals.Add(new double[] {
-                            double.Parse(words[1], CultureInfo.InvariantCulture), // swap Y and Z
-                            double.Parse(words[3], CultureInfo.InvariantCulture),
-                            double.Parse(words[2], CultureInfo.InvariantCulture)
+                            double.Parse(words[1], CultureInfo.InvariantCulture),
+                            double.Parse(words[2], CultureInfo.InvariantCulture),
+                            double.Parse(words[3], CultureInfo.InvariantCulture)
                         });
                     break;
                 case "VT":
@@ -66,47 +86,36 @@ public class ObjReader : IInputReader
                     currentMaterialName = null;
                     break;
                 case "F":
-                    var faces = words.Skip(1)
+                    var strides = words.Skip(1)
                         .Select(faceVertexString =>
                         {
                             var faceIndices = faceVertexString.Split("/");
-                            return new
+                            return new Stride
                             {
-                                vertexIndex = int.Parse(faceIndices[0], CultureInfo.InvariantCulture) - 1,
-                                uvIndex = int.Parse(faceIndices[1], CultureInfo.InvariantCulture) - 1,
-                                normalIndex = int.Parse(faceIndices[2], CultureInfo.InvariantCulture) - 1
+                                Coordinates = vertices.ElementAt(int.Parse(faceIndices[0], CultureInfo.InvariantCulture) - 1),
+                                Uvs = uvs.ElementAt(int.Parse(faceIndices[1], CultureInfo.InvariantCulture) - 1),
+                                Normals = normals.ElementAt(int.Parse(faceIndices[2], CultureInfo.InvariantCulture) - 1)
                             };
                         });
-                    if (faces.Any(f => f.normalIndex != faces.First().normalIndex))
-                    {
-                        _logger.LogWarning("Different normals in line {line}", lineNumber);
-                    }
+
                     var face = new Face()
                     {
                         MaterialName = currentMaterialName,
-                        FaceVertices = faces.Select(s => new FaceVertex
-                        {
-                            Vertex = vertices[s.vertexIndex],
-                            Normal = normals[s.normalIndex],
-                            Uv = uvs[s.uvIndex]
-                        }).ToList()
+                        Indices = strides.Select((s, i) => (currentObject.Strides.Count()) + i).Select(i => (ulong)i).ToList()
                     };
 
-                    // reverse clockwiseness of the vertices after normal flip
-                    var reversedTail = face.FaceVertices.Skip(1).Reverse();
-                    var reversedAll = new List<FaceVertex>
-                        {
-                            face.FaceVertices[0]
-                        };
-                    reversedAll.AddRange(reversedTail);
-                    face.FaceVertices = reversedAll;
-
+                    currentObject.Strides.AddRange(strides);
                     currentObject.Faces.Add(face);
                     break;
                 case "MTLLIB":
                     break;
                 case "USEMTL":
                     currentMaterialName = words[1];
+                    break;
+                case "G":
+                    currentObject.Name = words[1];
+                    break;
+                case "S":
                     break;
                 default:
                     _logger.LogInformation("Line {line}. Unknown verb: {verb}", lineNumber, verb);

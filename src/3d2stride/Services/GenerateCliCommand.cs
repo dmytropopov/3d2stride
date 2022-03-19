@@ -8,7 +8,7 @@ namespace StrideGenerator.Services;
 public class GenerateCliCommand
 {
     [Argument(0, Description = "Output file name", Name = "out-file")]
-    public string? OutputFileName { get; } = "lol";
+    public string OutputFileName { get; }
 
     [Option("-i|--input", CommandOptionType.MultipleValue, Description = "Input file name(s). Multiple options are supported.")]
     [Required]
@@ -25,11 +25,16 @@ public class GenerateCliCommand
 
     public async Task OnExecuteAsync()
     {
-        foreach (var inputFileName in InputFileNames)
+        var inputSettings = InputFileNames.Select(s => new InputSettings
         {
-            _logger.LogInformation($"Input file: {inputFileName}");
-        }
+            FileName = s,
+            FileFormat = Constants.FileFormats.Obj
+        });
+        //foreach (var inputFileName in InputFileNames)
+        //{
+        //    _logger.LogInformation($"Input file: {inputFileName}");
+        //}
 
-        await _generator.Generate();
+        await _generator.Generate(inputSettings, new OutputSettings { FileName = OutputFileName });
     }
 }
