@@ -41,8 +41,8 @@ public class MeshOptimizer
         foreach (var stride in meshObject.Strides)
         {
             //var indexOfKey = sorted.IndexOfKey(stride);
-            var exist = sorted.TryGetValue(stride, out var existingSorted);
-            if (exist)
+            var exists = sorted.TryGetValue(stride, out var existingSorted);
+            if (exists)
             {
                 stride.Face.Strides[stride.OriginalIndexInFace] = existingSorted;
             }
@@ -50,7 +50,15 @@ public class MeshOptimizer
             {
                 sorted.Add(stride, stride);
             }
+            stride.Index = sorted.IndexOfKey(stride);
         }
+        foreach (var stride in sorted)
+        {
+            stride.Value.Index = sorted.IndexOfKey(stride.Value);
+        }
+
+        // TODO restore stride order
+
         //var resorted = sorted.OrderBy(s => s.Value).Select(s => s.Key).ToList();
 
         //var optimizedFaces = new List<Face>();

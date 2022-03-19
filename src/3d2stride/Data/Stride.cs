@@ -8,6 +8,7 @@ public class Stride : /*IEquatable<Stride>,*/ IComparable<Stride>
 
     public Face Face { get; set; }
     public int OriginalIndexInFace { get; set; }
+    public int Index { get; set; } = -1;
 
     /// <summary>
     /// Vertex colors etc

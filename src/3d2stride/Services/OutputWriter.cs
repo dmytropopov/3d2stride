@@ -27,7 +27,7 @@ public class OutputWriter : IOutputWriter
 
         var sw = Stopwatch.StartNew();
 
-        foreach (var optimized in meshes.Select(m=>_meshOptimizer.GetOptimized(m)))
+        foreach (var optimized in meshes.Select(m => _meshOptimizer.GetOptimized(m)))
         {
             foreach (var stride in optimized.Strides)
             {
@@ -42,19 +42,8 @@ public class OutputWriter : IOutputWriter
             {
                 foreach (var stride in face.Strides)
                 {
-                    indicesWriter.Write((ushort)optimized.Strides.IndexOf(stride));
+                    indicesWriter.Write((ushort)stride.Index);
                 }
-                //foreach (var index in face.Indices)
-                //{
-                //    var stride = optimized.Strides.ElementAt(index);
-                //    stridesWriter.Write((float)stride.Coordinates[0]);
-                //    stridesWriter.Write((float)stride.Coordinates[1]);
-                //    stridesWriter.Write((float)stride.Coordinates[2]);
-                //    stridesWriter.Write((float)stride.Uvs[0]);
-                //    stridesWriter.Write((float)stride.Uvs[1]);
-
-                //    indicesWriter.Write((ushort)index);
-                //}
             }
         }
         sw.Stop();
