@@ -74,7 +74,7 @@ public class ObjReader : IInputReader
                 case "VT":
                     uvs.Add(new double[] {
                             double.Parse(words[1], CultureInfo.InvariantCulture),
-                            double.Parse(words[2], CultureInfo.InvariantCulture)
+                            1.0d - double.Parse(words[2], CultureInfo.InvariantCulture)
                         });
                     break;
                 case "O":
@@ -101,7 +101,7 @@ public class ObjReader : IInputReader
                     var face = new Face()
                     {
                         MaterialName = currentMaterialName,
-                        Indices = strides.Select((s, i) => (currentObject.Strides.Count()) + i).Select(i => (ulong)i).ToList()
+                        Indices = strides.Select((s, i) => (currentObject.Strides.Count()) + i).ToList()
                     };
 
                     currentObject.Strides.AddRange(strides);

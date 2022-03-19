@@ -2,7 +2,7 @@
   "profiles": {
     "3d2stride": {
       "commandName": "Project",
-      "commandLineArgs": "-i:d:\\Work\\webgl-lanhoso\\data\\models\\test.obj"
+      "commandLineArgs": "-i:d:\\Work\\webgl-lanhoso\\data\\models\\sky-half.obj"
     }
   }
 }

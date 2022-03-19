@@ -2,6 +2,6 @@
 
 public class Face
 {
-    public List<ulong> Indices { get; set; } = new List<ulong>();
+    public List<int> Indices { get; set; } = new();
     public string? MaterialName { get; set; }
 }

@@ -6,9 +6,14 @@ public class OutputWriter : IOutputWriter
 {
     public async Task Write(IEnumerable<MeshObject> meshes, OutputSettings outputSettings)
     {
-        using var indicesStream = File.Open(Path.ChangeExtension(outputSettings.FileName + "-indices2", "bin"), FileMode.Create);
-        using var indicesWriter = new BinaryWriter(indicesStream);
+        WriteIndices(meshes, outputSettings);
+        WriteStrides(meshes, outputSettings);
+    }
 
+    private void WriteStrides(IEnumerable<MeshObject> meshes, OutputSettings outputSettings)
+    {
+        using var stream = File.Open(Path.ChangeExtension(outputSettings.FileName + "-strides", "bin"), FileMode.Create);
+        using var writer = new BinaryWriter(stream);
         foreach (var mesh in meshes)
         {
             foreach (var meshObject in meshes)
@@ -17,17 +22,38 @@ public class OutputWriter : IOutputWriter
                 {
                     foreach (var index in face.Indices)
                     {
-                        indicesWriter.Write((ushort)index);
-                        //indicesWriter.Close();
-                        //indicesStream.Close();
-                        //return;
+                        var stride = meshObject.Strides.ElementAt(index);
+                        writer.Write((float)stride.Coordinates[0]);
+                        writer.Write((float)stride.Coordinates[1]);
+                        writer.Write((float)stride.Coordinates[2]);
+                        writer.Write((float)stride.Uvs[0]);
+                        writer.Write((float)stride.Uvs[1]);
                     }
-                    // TODO
-                    //indicesWriter.Flush();
                 }
             }
         }
-        indicesWriter.Close();
-        indicesStream.Close();
+        writer.Close();
+        stream.Close();
+    }
+
+    private static void WriteIndices(IEnumerable<MeshObject> meshes, OutputSettings outputSettings)
+    {
+        using var stream = File.Open(Path.ChangeExtension(outputSettings.FileName + "-indices", "bin"), FileMode.Create);
+        using var writer = new BinaryWriter(stream);
+        foreach (var mesh in meshes)
+        {
+            foreach (var meshObject in meshes)
+            {
+                foreach (var face in meshObject.Faces)
+                {
+                    foreach (var index in face.Indices)
+                    {
+                        writer.Write((ushort)index);
+                    }
+                }
+            }
+        }
+        writer.Close();
+        stream.Close();
     }
 }
