@@ -21,6 +21,7 @@ return await new HostBuilder()
             .AddSingleton<IGenerator, Generator>()
             .AddSingleton<IInputReader, ObjReader>()
             .AddSingleton<IOutputWriter, OutputWriter>()
+            .AddSingleton<MeshOptimizer>()
             .AddSingleton(PhysicalConsole.Singleton);
     })
     .RunCommandLineApplicationAsync<GenerateCliCommand>(args);
