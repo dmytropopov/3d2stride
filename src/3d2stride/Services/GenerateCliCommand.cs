@@ -7,7 +7,7 @@ namespace StrideGenerator.Services;
 [Command(Name = "Generate", Description = "Generate output stride/indices files.")]
 public class GenerateCliCommand
 {
-    [Argument(0, Description = "Output file name", Name = "out-file")]
+    [Argument(0, Description = "Output file name. {0} for object name. {1} for zero-based index.", Name = "out-file")]
     public string OutputFileName { get; }
 
     [Option("-i|--input", CommandOptionType.MultipleValue, Description = "Input file name(s). Multiple options are supported.")]
@@ -30,10 +30,16 @@ public class GenerateCliCommand
             FileName = s,
             FileFormat = Constants.FileFormats.Obj
         });
-        //foreach (var inputFileName in InputFileNames)
-        //{
-        //    _logger.LogInformation($"Input file: {inputFileName}");
-        //}
+
+        var outputSettings = new OutputSettings()
+        {
+            FileName = OutputFileName
+        };
+
+        if (string.IsNullOrEmpty(outputSettings.FileName))
+        {
+            outputSettings.FileName = Path.ChangeExtension(inputSettings.First().FileName, "").TrimEnd('.');
+        }
 
         await _generator.Generate(inputSettings, new OutputSettings { FileName = OutputFileName });
     }

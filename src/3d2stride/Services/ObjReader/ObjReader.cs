@@ -8,9 +8,9 @@ namespace StrideGenerator.Services.Obj;
 public class ObjReader : IInputReader
 {
     private readonly ILogger<ObjReader> _logger;
-    private readonly List<double[]> vertices = new();
-    private readonly List<double[]> normals = new();
-    private readonly List<double[]> uvs = new();
+    private readonly List<double[]> vertices = new List<double[]>(65536);
+    private readonly List<double[]> normals = new List<double[]>(65536);
+    private readonly List<double[]> uvs = new List<double[]>(65536);
 
     public ObjReader(ILogger<ObjReader> logger)
     {
@@ -19,22 +19,20 @@ public class ObjReader : IInputReader
 
     public async Task<IEnumerable<MeshObject>> ReadInput(InputSettings inputData)
     {
-        using var reader = new StreamReader(inputData.FileName);
         Stopwatch sw = new();
         sw.Start();
         List<MeshObject> list = new List<MeshObject>();
 
-        string? line;
         var lineNumber = 0;
         var currentObject = new MeshObject();
         string? currentMaterialName = null;
 
-        while ((line = await reader.ReadLineAsync()) != null)
+        foreach (var line in File.ReadLines(inputData.FileName))
         {
-            var words = line.Trim().Split(" ")
+            var words = line.Split(" ")
                 .Where(w => !string.IsNullOrEmpty(w)).ToArray(); // skip empty words (in case of double spaces etc)
 
-            if (words.Length == 0)
+            if (words.Count() == 0)
             {
                 continue;
             }
@@ -56,21 +54,22 @@ public class ObjReader : IInputReader
                             };
                             list.Add(currentObject);
                             currentMaterialName = null;
+                            Console.WriteLine($"Reading object {currentObject.Name}");
                         }
                     }
                     break;
                 case "V":
                     vertices.Add(new double[] {
-                            double.Parse(words[1], CultureInfo.InvariantCulture),
-                            double.Parse(words[2], CultureInfo.InvariantCulture),
-                            double.Parse(words[3], CultureInfo.InvariantCulture)
+                            float.Parse(words[1], CultureInfo.InvariantCulture),
+                            float.Parse(words[2], CultureInfo.InvariantCulture),
+                            float.Parse(words[3], CultureInfo.InvariantCulture)
                         });
                     break;
                 case "VN":
                     normals.Add(new double[] {
-                            double.Parse(words[1], CultureInfo.InvariantCulture),
-                            double.Parse(words[2], CultureInfo.InvariantCulture),
-                            double.Parse(words[3], CultureInfo.InvariantCulture)
+                           float.Parse(words[1], CultureInfo.InvariantCulture),
+                           float.Parse(words[2], CultureInfo.InvariantCulture),
+                           float.Parse(words[3], CultureInfo.InvariantCulture)
                         });
                     break;
                 case "VT":
@@ -98,18 +97,12 @@ public class ObjReader : IInputReader
                                 Uvs = uvs.ElementAt(int.Parse(faceIndices[1], CultureInfo.InvariantCulture) - 1),
                                 Normals = normals.ElementAt(int.Parse(faceIndices[2], CultureInfo.InvariantCulture) - 1)
                             };
-                        }).ToArray();
-
-                    //foreach (var stride in strides)
-                    //{
-                    //    //var existinStride = currentObject.Strides.FirstOrDefault(s => s.Equals(stride));
-                    //}
+                        }).ToList();
 
                     var face = new Face()
                     {
                         MaterialName = currentMaterialName,
                         Strides = strides.ToList()
-                        //Indices = strides.Select((s, i) => (currentObject.Strides.Count()) + i).ToList()
                     };
                     var i = 0;
                     foreach (var s in strides)

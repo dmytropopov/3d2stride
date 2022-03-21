@@ -18,17 +18,28 @@ public class OutputWriter : IOutputWriter
         _meshOptimizer = meshOptimizer;
     }
 
-    public Task Write(IEnumerable<MeshObject> meshes, OutputSettings outputSettings)
+    public Task Write(IEnumerable<MeshObject> meshes, IEnumerable<InputSettings> inputs, OutputSettings outputSettings)
     {
-        using var stridesStream = File.Open(Path.ChangeExtension(outputSettings.FileName + "-strides", "bin"), FileMode.Create);
-        using var stridesWriter = new BinaryWriter(stridesStream);
-        using var indicesStream = File.Open(Path.ChangeExtension(outputSettings.FileName + "-indices", "bin"), FileMode.Create);
-        using var indicesWriter = new BinaryWriter(indicesStream);
+        if (meshes.Count() > 0 && !(outputSettings.FileName?.Contains("{") ?? false))
+        {
+            _console.WriteLine("Multiple meshes found, but output does not contain template like {0} or {1} - using default template.");
+            var inputFileName = Path.ChangeExtension(inputs.First().FileName, "").TrimEnd('.');
+            outputSettings.FileName = inputFileName + "{1}";
+        }
 
         var sw = Stopwatch.StartNew();
 
+        int i = 0;
         foreach (var optimized in meshes.Select(m => _meshOptimizer.GetOptimized(m)))
         {
+            var fileName = GetFileName(outputSettings, i++, optimized.Name);
+            Console.WriteLine($"Writing object {optimized.Name} to file {fileName}");
+
+            using var stridesStream = File.Open(Path.ChangeExtension(fileName + "-strides", "bin"), FileMode.Create);
+            using var stridesWriter = new BinaryWriter(stridesStream);
+            using var indicesStream = File.Open(Path.ChangeExtension(fileName + "-indices", "bin"), FileMode.Create);
+            using var indicesWriter = new BinaryWriter(indicesStream);
+
             foreach (var stride in optimized.Strides)
             {
                 stridesWriter.Write((float)stride.Coordinates[0]);
@@ -45,14 +56,22 @@ public class OutputWriter : IOutputWriter
                     indicesWriter.Write((ushort)stride.Index);
                 }
             }
+
+            stridesWriter.Close();
+            stridesStream.Close();
+            indicesWriter.Close();
+            indicesStream.Close();
         }
         sw.Stop();
         Console.WriteLine($"Write time: {sw.Elapsed}");
-        stridesWriter.Close();
-        stridesStream.Close();
-        indicesWriter.Close();
-        indicesStream.Close();
 
         return Task.CompletedTask;
+    }
+
+    private static string GetFileName(OutputSettings outputSettings, int index, string objectName)
+    {
+        var result = string.Format(outputSettings.FileName, objectName, index);
+
+        return result;
     }
 }

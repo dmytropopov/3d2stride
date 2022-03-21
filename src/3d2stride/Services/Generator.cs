@@ -15,7 +15,7 @@ public class Generator : IGenerator
         _outputWriter = outputWriter;
     }
 
-    public async Task Generate(IEnumerable<InputSettings> inputs, OutputSettings output)
+    public async Task Generate(IEnumerable<InputSettings> inputs, OutputSettings outputSettings)
     {
         // TODO
         // When output is not specified and there is only 1 object in input, use input file name
@@ -24,12 +24,8 @@ public class Generator : IGenerator
         {
             var reader = _inputReaderFactory.GetReader(inputSettings.FileFormat);
             var meshes = await reader.ReadInput(inputSettings);
-
-            var outputSettings = new OutputSettings()
-            {
-                FileName = Path.ChangeExtension(inputSettings.FileName, "").TrimEnd('.')
-            };
-            await _outputWriter.Write(meshes, outputSettings);
+            
+            await _outputWriter.Write(meshes, inputs, outputSettings);
         }
     }
 }
