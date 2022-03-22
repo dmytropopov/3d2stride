@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace StrideGenerator.Services;
 
 [Command(Name = "Generate", Description = "Generate output stride/indices files.")]
-public class GenerateCliCommand
+public sealed class GenerateCliCommand
 {
     [Argument(0, Description = "Output file name. {0} for object name. {1} for zero-based index.", Name = "out-file")]
     public string OutputFileName { get; }

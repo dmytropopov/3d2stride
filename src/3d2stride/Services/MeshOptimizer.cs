@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 namespace StrideGenerator.Services;
 
-public class MeshOptimizer
+public sealed class MeshOptimizer
 {
     private readonly IConsole _console;
 

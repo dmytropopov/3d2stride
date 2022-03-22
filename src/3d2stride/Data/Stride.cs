@@ -1,11 +1,11 @@
 ﻿namespace StrideGenerator.Data;
 
-public class StrideOriginalIndexComparer : IComparer<Stride>
+public sealed class StrideOriginalIndexComparer : IComparer<Stride>
 {
     public int Compare(Stride? x, Stride? y) => x.OriginalIndex.CompareTo(y.OriginalIndex);
 }
 
-public class Stride : IComparable<Stride>
+public sealed class Stride : IComparable<Stride>
 {
     public double[] Coordinates { get; set; } = new double[3];
     public double[] Uvs { get; set; } = new double[2];

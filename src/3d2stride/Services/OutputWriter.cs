@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace StrideGenerator.Services;
 
-public class OutputWriter : IOutputWriter
+public sealed class OutputWriter : IOutputWriter
 {
     private readonly IConsole _console;
     private readonly ILogger<OutputWriter> _logger;

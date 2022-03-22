@@ -2,7 +2,7 @@
 
 namespace StrideGenerator.Services;
 
-public class InputReaderFactory
+public sealed class InputReaderFactory
 {
     private readonly Dictionary<string, IInputReader> _inputReaders;
 

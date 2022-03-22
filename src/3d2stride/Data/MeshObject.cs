@@ -1,6 +1,6 @@
 ﻿namespace StrideGenerator.Data;
 
-public class MeshObject
+public sealed class MeshObject
 {
     public string? Name { get; set; }
 

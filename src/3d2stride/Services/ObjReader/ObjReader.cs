@@ -1,11 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using csFastFloat;
+using Microsoft.Extensions.Logging;
 using StrideGenerator.Data;
 using System.Diagnostics;
 using System.Globalization;
 
 namespace StrideGenerator.Services.Obj;
 
-public class ObjReader : IInputReader
+public sealed class ObjReader : IInputReader
 {
     private readonly ILogger<ObjReader> _logger;
     private readonly List<double[]> vertices = new List<double[]>(65536);
@@ -60,22 +61,22 @@ public class ObjReader : IInputReader
                     break;
                 case "V":
                     vertices.Add(new double[] {
-                            float.Parse(words[1], CultureInfo.InvariantCulture),
-                            float.Parse(words[2], CultureInfo.InvariantCulture),
-                            float.Parse(words[3], CultureInfo.InvariantCulture)
+                            FastDoubleParser.ParseDouble(words[1]),
+                            FastDoubleParser.ParseDouble(words[2]),
+                            FastDoubleParser.ParseDouble(words[3])
                         });
                     break;
                 case "VN":
                     normals.Add(new double[] {
-                           float.Parse(words[1], CultureInfo.InvariantCulture),
-                           float.Parse(words[2], CultureInfo.InvariantCulture),
-                           float.Parse(words[3], CultureInfo.InvariantCulture)
+                           FastDoubleParser.ParseDouble(words[1]),
+                           FastDoubleParser.ParseDouble(words[2]),
+                           FastDoubleParser.ParseDouble(words[3])
                         });
                     break;
                 case "VT":
                     uvs.Add(new double[] {
-                            double.Parse(words[1], CultureInfo.InvariantCulture),
-                            1.0d - double.Parse(words[2], CultureInfo.InvariantCulture)
+                            FastDoubleParser.ParseDouble(words[1]),
+                            1.0d - FastDoubleParser.ParseDouble(words[2])
                         });
                     break;
                 case "O":

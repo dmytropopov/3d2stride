@@ -2,7 +2,7 @@
 
 namespace StrideGenerator.Services;
 
-public class Generator : IGenerator
+public sealed class Generator : IGenerator
 {
     private readonly ILogger _logger;
     private readonly InputReaderFactory _inputReaderFactory;
