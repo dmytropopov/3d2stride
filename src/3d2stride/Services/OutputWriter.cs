@@ -20,11 +20,16 @@ public sealed class OutputWriter : IOutputWriter
 
     public Task Write(IEnumerable<MeshObject> meshes, IEnumerable<InputSettings> inputs, OutputSettings outputSettings)
     {
-        if (meshes.Count() > 0 && !(outputSettings.FileName?.Contains("{") ?? false))
+        var inputFileName = Path.ChangeExtension(inputs.First().FileName, "").TrimEnd('.');
+        if (meshes.Count() > 1 && !(outputSettings.FileName?.Contains("{") ?? false))
         {
             _console.WriteLine("Multiple meshes found, but output does not contain template like {0} or {1} - using default template.");
-            var inputFileName = Path.ChangeExtension(inputs.First().FileName, "").TrimEnd('.');
             outputSettings.FileName = inputFileName + "{1}";
+        }
+        else if (meshes.Count() == 1 && string.IsNullOrEmpty(outputSettings.FileName))
+        {
+            _console.WriteLine($"One mesh found, but output is not set, using output name '{inputFileName}'.");
+            outputSettings.FileName = inputFileName;
         }
 
         var sw = Stopwatch.StartNew();

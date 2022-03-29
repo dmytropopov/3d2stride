@@ -2,6 +2,6 @@
 
 public sealed class Face
 {
-    public List<Stride> Strides { get; set; } = new();
+    public Stride[] Strides { get; set; }
     public string? MaterialName { get; set; }
 }

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using StrideGenerator.Data;
 using System.Diagnostics;
 using System.Globalization;
+using Open.Text;
 
 namespace StrideGenerator.Services.Obj;
 
@@ -18,7 +19,7 @@ public sealed class ObjReader : IInputReader
         _logger = logger;
     }
 
-    public async Task<IEnumerable<MeshObject>> ReadInput(InputSettings inputData)
+    public Task<IEnumerable<MeshObject>> ReadInput(InputSettings inputData)
     {
         Stopwatch sw = new();
         sw.Start();
@@ -30,112 +31,145 @@ public sealed class ObjReader : IInputReader
 
         foreach (var line in File.ReadLines(inputData.FileName))
         {
-            var words = line.Split(" ")
-                .Where(w => !string.IsNullOrEmpty(w)).ToArray(); // skip empty words (in case of double spaces etc)
+            var words = line.SplitAsMemory(' ', StringSplitOptions.RemoveEmptyEntries);
+            var verb = words.FirstOrDefault().Span;
 
-            if (words.Count() == 0)
+            var str = verb.ToString();
+
+            if (MemoryExtensions.Equals(verb, "#", StringComparison.InvariantCultureIgnoreCase))
             {
-                continue;
+                if (words.Count() == 3)
+                {
+                    // strange 3ds max OBJ output is not using 'O' verb
+                    if (words.ElementAt(1).Span.Equals("object", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        currentObject = new MeshObject()
+                        {
+                            Name = words.ElementAt(2).ToString()
+                        };
+                        list.Add(currentObject);
+                        currentMaterialName = null;
+                        Console.WriteLine($"Reading object {currentObject.Name}");
+                    }
+                }
             }
-
-            var verb = words[0].ToUpperInvariant();
-            switch (verb)
+            else if (MemoryExtensions.Equals(verb, "v", StringComparison.InvariantCultureIgnoreCase))
             {
-                case "":
-                    break;
-                case "#":
-                    if (words.Length == 3)
-                    {
-                        // strange 3ds max OBJ output is not using 'O' verb
-                        if (words[1].ToLowerInvariant() == "object")
-                        {
-                            currentObject = new MeshObject()
-                            {
-                                Name = words[2]
-                            };
-                            list.Add(currentObject);
-                            currentMaterialName = null;
-                            Console.WriteLine($"Reading object {currentObject.Name}");
-                        }
-                    }
-                    break;
-                case "V":
-                    vertices.Add(new double[] {
-                            FastDoubleParser.ParseDouble(words[1]),
-                            FastDoubleParser.ParseDouble(words[2]),
-                            FastDoubleParser.ParseDouble(words[3])
-                        });
-                    break;
-                case "VN":
-                    normals.Add(new double[] {
-                           FastDoubleParser.ParseDouble(words[1]),
-                           FastDoubleParser.ParseDouble(words[2]),
-                           FastDoubleParser.ParseDouble(words[3])
-                        });
-                    break;
-                case "VT":
-                    uvs.Add(new double[] {
-                            FastDoubleParser.ParseDouble(words[1]),
-                            1.0d - FastDoubleParser.ParseDouble(words[2])
-                        });
-                    break;
-                case "O":
-                    currentObject = new MeshObject()
-                    {
-                        Name = words[1]
-                    };
-                    list.Add(currentObject);
-                    currentMaterialName = null;
-                    break;
-                case "F":
-                    var strides = words.Skip(1)
-                        .Select(faceVertexString =>
-                        {
-                            var faceIndices = faceVertexString.Split("/");
-                            return new Stride
-                            {
-                                Coordinates = vertices.ElementAt(int.Parse(faceIndices[0], CultureInfo.InvariantCulture) - 1),
-                                Uvs = uvs.ElementAt(int.Parse(faceIndices[1], CultureInfo.InvariantCulture) - 1),
-                                Normals = normals.ElementAt(int.Parse(faceIndices[2], CultureInfo.InvariantCulture) - 1)
-                            };
-                        }).ToList();
-
-                    var face = new Face()
-                    {
-                        MaterialName = currentMaterialName,
-                        Strides = strides.ToList()
-                    };
-                    var i = 0;
-                    foreach (var s in strides)
-                    {
-                        s.Face = face;
-                        s.OriginalIndexInFace = face.Strides.IndexOf(s);
-                        s.OriginalIndex = currentObject.Strides.Count() + i++;
-                    }
-
-                    currentObject.Strides.AddRange(strides);
-                    currentObject.Faces.Add(face);
-                    break;
-                case "MTLLIB":
-                    break;
-                case "USEMTL":
-                    currentMaterialName = words[1];
-                    break;
-                case "G":
-                    currentObject.Name = words[1];
-                    break;
-                case "S":
-                    break;
-                default:
-                    _logger.LogInformation("Line {line}. Unknown verb: {verb}", lineNumber, verb);
-                    break;
+                var i = 0;
+                var arr = new double[3];
+                foreach (var word in words.Skip(1))
+                {
+                    arr[i++] = FastDoubleParser.ParseDouble(word.Span);
+                }
+                vertices.Add(arr);
             }
+            else if (MemoryExtensions.Equals(verb, "vn", StringComparison.InvariantCultureIgnoreCase))
+            {
+                var i = 0;
+                var arr = new double[3];
+                foreach (var word in words.Skip(1))
+                {
+                    arr[i++] = FastDoubleParser.ParseDouble(word.Span);
+                }
+                normals.Add(arr);
+                //normals.Add(new double[] {
+                //           FastDoubleParser.ParseDouble(words.ElementAt(1).Span),
+                //           FastDoubleParser.ParseDouble(words.ElementAt(2).Span),
+                //           FastDoubleParser.ParseDouble(words.ElementAt(3).Span)
+                //        });
+            }
+            else if (MemoryExtensions.Equals(verb, "vt", StringComparison.InvariantCultureIgnoreCase))
+            {
+                var i = 0;
+                var arr = new double[2];
+                foreach (var word in words.Skip(1))
+                {
+                    if (i == 0)
+                    {
+                        arr[i++] = FastDoubleParser.ParseDouble(word.Span);
+                    }
+                    else if (i == 1)
+                    {
+                        arr[i++] = 1.0d - FastDoubleParser.ParseDouble(word.Span);
+                    }
+                }
+                uvs.Add(arr);
+                //uvs.Add(new double[] {
+                //            FastDoubleParser.ParseDouble(words.ElementAt(1).Span),
+                //            1.0d - FastDoubleParser.ParseDouble(words.ElementAt(2).Span)
+                //        });
+            }
+            else if (MemoryExtensions.Equals(verb, "o", StringComparison.InvariantCultureIgnoreCase))
+            {
+                currentObject = new MeshObject()
+                {
+                    Name = words.ElementAt(1).ToString(),
+                };
+                list.Add(currentObject);
+                currentMaterialName = null;
+            }
+            else if (MemoryExtensions.Equals(verb, "f", StringComparison.InvariantCultureIgnoreCase))
+            {
+                var strides = new Stride[3];
+                int si = 0;
+                foreach (var word in words.Skip(1))
+                {
+                    var faceIndices = word.Span.Split('/');
+                    strides[si++] = new Stride
+                    {
+                        Coordinates = vertices.ElementAt(int.Parse(faceIndices[0], CultureInfo.InvariantCulture) - 1),
+                        Uvs = uvs.ElementAt(int.Parse(faceIndices[1], CultureInfo.InvariantCulture) - 1),
+                        Normals = normals.ElementAt(int.Parse(faceIndices[2], CultureInfo.InvariantCulture) - 1)
+                    };
+                }
+                //var strides = words.Skip(1)
+                //    .Select(faceVertexString =>
+                //    {
+                //        var faceIndices = faceVertexString.ToString().Split("/");
+                //        return new Stride
+                //        {
+                //            Coordinates = vertices.ElementAt(int.Parse(faceIndices[0], CultureInfo.InvariantCulture) - 1),
+                //            Uvs = uvs.ElementAt(int.Parse(faceIndices[1], CultureInfo.InvariantCulture) - 1),
+                //            Normals = normals.ElementAt(int.Parse(faceIndices[2], CultureInfo.InvariantCulture) - 1)
+                //        };
+                //    }).ToList();
+
+                var face = new Face()
+                {
+                    MaterialName = currentMaterialName,
+                    Strides = strides
+                };
+                var i = 0;
+                foreach (var s in strides)
+                {
+                    s.Face = face;
+                    s.OriginalIndexInFace = Array.IndexOf(face.Strides, s);
+                    s.OriginalIndex = currentObject.Strides.Count() + i++;
+                }
+
+                currentObject.Strides.AddRange(strides);
+                currentObject.Faces.Add(face);
+            }
+            //case "MTLLIB":
+            //    break;
+            //case "USEMTL":
+            //    currentMaterialName = words[1];
+            //    break;
+            //case "G":
+            //    currentObject.Name = words[1];
+            //    break;
+            //case "S":
+            //    break;
+            //default:
+            //    _logger.LogInformation("Line {line}. Unknown verb: {verb}", lineNumber, verb);
+            //    break;
+            //}
 
             lineNumber++;
         }
         sw.Stop();
         Console.WriteLine($"Read time: {sw.Elapsed}");
 
-        return list;
+        return Task.FromResult(list.AsEnumerable());
     }
 }
