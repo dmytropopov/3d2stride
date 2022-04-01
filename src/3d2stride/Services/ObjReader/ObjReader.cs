@@ -4,6 +4,7 @@ using StrideGenerator.Data;
 using System.Diagnostics;
 using System.Globalization;
 using Open.Text;
+using System.Runtime.CompilerServices;
 
 namespace StrideGenerator.Services.Obj;
 
@@ -21,6 +22,8 @@ public sealed class ObjReader : IInputReader
 
     public Task<IEnumerable<MeshObject>> ReadInput(InputSettings inputData)
     {
+        //GC.TryStartNoGCRegion(100 * 1024 * 1024);
+
         var commentSpan = "#".AsSpan();
         var vSpan = "v".AsSpan();
         var VSpan = "V".AsSpan();
@@ -32,6 +35,7 @@ public sealed class ObjReader : IInputReader
         var OSpan = "O".AsSpan();
         var fSpan = "f".AsSpan();
         var FSpan = "F".AsSpan();
+        var objectSpan = "object".AsSpan();
 
         Stopwatch sw = new();
         sw.Start();
@@ -43,75 +47,71 @@ public sealed class ObjReader : IInputReader
 
         foreach (var line in File.ReadLines(inputData.FileName))
         {
-            var words = line.SplitAsMemory(' ', StringSplitOptions.RemoveEmptyEntries);
-            var verb = words.FirstOrDefault().Span;
+            var lineSpan = line.AsSpan();
+            var verb = lineSpan.FirstSplit(' ', out var lineNextIndex);
+            if (lineNextIndex == -1)
+            {
+                continue;
+            }
+            lineSpan = lineSpan.Slice(lineNextIndex);
+            ReadOnlySpan<char> wordSpan;
 
             var str = verb.ToString();
 
             if (verb.SequenceEqual(vSpan) || verb.SequenceEqual(VSpan))
             {
-                var i = 0;
                 var arr = new double[3];
-                foreach (var word in words.Skip(1))
+                for (var i = 0; i < 3; i++)
                 {
-                    arr[i++] = FastDoubleParser.ParseDouble(word.Span);
+                    lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
+                    arr[i] = FastDoubleParser.ParseDouble(wordSpan);
                 }
                 vertices.Add(arr);
             }
             else if (verb.SequenceEqual(vnSpan) || verb.SequenceEqual(VNSpan))
             {
-                var i = 0;
                 var arr = new double[3];
-                foreach (var word in words.Skip(1))
+                for (var i = 0; i < 3; i++)
                 {
-                    arr[i++] = FastDoubleParser.ParseDouble(word.Span);
+                    lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
+                    arr[i] = FastDoubleParser.ParseDouble(wordSpan);
                 }
                 normals.Add(arr);
-                //normals.Add(new double[] {
-                //           FastDoubleParser.ParseDouble(words.ElementAt(1).Span),
-                //           FastDoubleParser.ParseDouble(words.ElementAt(2).Span),
-                //           FastDoubleParser.ParseDouble(words.ElementAt(3).Span)
-                //        });
             }
             else if (verb.SequenceEqual(vtSpan) || verb.SequenceEqual(VTSpan))
             {
-                var i = 0;
                 var arr = new double[2];
-                foreach (var word in words.Skip(1))
+                for (var i = 0; i < 2; i++)
                 {
+                    lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
                     if (i == 0)
                     {
-                        arr[i++] = FastDoubleParser.ParseDouble(word.Span);
+                        arr[i] = FastDoubleParser.ParseDouble(wordSpan);
                     }
                     else if (i == 1)
                     {
-                        arr[i++] = 1.0d - FastDoubleParser.ParseDouble(word.Span);
+                        arr[i] = 1.0d - FastDoubleParser.ParseDouble(wordSpan);
                     }
                 }
                 uvs.Add(arr);
-                //uvs.Add(new double[] {
-                //            FastDoubleParser.ParseDouble(words.ElementAt(1).Span),
-                //            1.0d - FastDoubleParser.ParseDouble(words.ElementAt(2).Span)
-                //        });
             }
             else if (verb.SequenceEqual(fSpan) || verb.SequenceEqual(FSpan))
             {
                 var strides = new Stride[3];
-                int si = 0;
-                foreach (var word in words.Skip(1))
+                for (var si = 0; si < 3; si++)
                 {
-                    var windowSpan = word.Span;
-                    var faceSpan = windowSpan.FirstSplit('/', out var nextIndex);
+                    lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
+                    var faceSpan = wordSpan.FirstSplit('/', out var nextIndex);
                     var vertexIndex = int.Parse(faceSpan, NumberStyles.None, CultureInfo.InvariantCulture) - 1;
-                    
-                    windowSpan = windowSpan.Slice(nextIndex);
-                    faceSpan = windowSpan.FirstSplit('/', out nextIndex);
+
+                    wordSpan = wordSpan.Slice(nextIndex);
+                    faceSpan = wordSpan.FirstSplit('/', out nextIndex);
                     var uvIndex = int.Parse(faceSpan, NumberStyles.None, CultureInfo.InvariantCulture) - 1;
 
-                    windowSpan = windowSpan.Slice(nextIndex);
-                    var normalIndex = int.Parse(windowSpan, NumberStyles.None, CultureInfo.InvariantCulture) - 1;
+                    wordSpan = wordSpan.Slice(nextIndex);
+                    var normalIndex = int.Parse(wordSpan, NumberStyles.None, CultureInfo.InvariantCulture) - 1;
 
-                    strides[si++] = new Stride
+                    strides[si] = new Stride
                     {
                         Coordinates = vertices.ElementAt(vertexIndex),
                         Uvs = uvs.ElementAt(uvIndex),
@@ -137,23 +137,25 @@ public sealed class ObjReader : IInputReader
             }
             else if (verb.SequenceEqual(oSpan) || verb.SequenceEqual(OSpan))
             {
+                lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
                 currentObject = new MeshObject()
                 {
-                    Name = words.ElementAt(1).ToString(),
+                    Name = wordSpan.ToString()
                 };
                 list.Add(currentObject);
                 currentMaterialName = null;
             }
             else if (verb.SequenceEqual(commentSpan))
             {
-                if (words.Count() == 3)
+                lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
+                if (wordSpan.SequenceEqual(objectSpan))
                 {
-                    // strange 3ds max OBJ output is not using 'O' verb
-                    if (words.ElementAt(1).Span.Equals("object", StringComparison.InvariantCultureIgnoreCase))
+                    lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
+                    if(wordSpan.Length > 0)
                     {
                         currentObject = new MeshObject()
                         {
-                            Name = words.ElementAt(2).ToString()
+                            Name = wordSpan.ToString()
                         };
                         list.Add(currentObject);
                         currentMaterialName = null;
@@ -181,6 +183,27 @@ public sealed class ObjReader : IInputReader
         sw.Stop();
         Console.WriteLine($"Read time: {sw.Elapsed}");
 
+        //GC.EndNoGCRegion();
+
         return Task.FromResult(list.AsEnumerable());
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ReadOnlySpan<char> MoveToNextWord(ReadOnlySpan<char> lineSpan, out int lineNextIndex, out ReadOnlySpan<char> wordSpan)
+    {
+        do
+        {
+            wordSpan = lineSpan.FirstSplit(' ', out lineNextIndex);
+            if (lineNextIndex == -1)
+            {
+                wordSpan = lineSpan;
+                break;
+            }
+            else
+            {
+                lineSpan = lineSpan.Slice(lineNextIndex);
+            }
+        } while (wordSpan.Length == 0);
+        return lineSpan;
     }
 }
