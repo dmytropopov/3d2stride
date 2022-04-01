@@ -21,6 +21,18 @@ public sealed class ObjReader : IInputReader
 
     public Task<IEnumerable<MeshObject>> ReadInput(InputSettings inputData)
     {
+        var commentSpan = "#".AsSpan();
+        var vSpan = "v".AsSpan();
+        var VSpan = "V".AsSpan();
+        var vtSpan = "vt".AsSpan();
+        var VTSpan = "VT".AsSpan();
+        var vnSpan = "vn".AsSpan();
+        var VNSpan = "VN".AsSpan();
+        var oSpan = "o".AsSpan();
+        var OSpan = "O".AsSpan();
+        var fSpan = "f".AsSpan();
+        var FSpan = "F".AsSpan();
+
         Stopwatch sw = new();
         sw.Start();
         List<MeshObject> list = new List<MeshObject>();
@@ -36,24 +48,7 @@ public sealed class ObjReader : IInputReader
 
             var str = verb.ToString();
 
-            if (MemoryExtensions.Equals(verb, "#", StringComparison.InvariantCultureIgnoreCase))
-            {
-                if (words.Count() == 3)
-                {
-                    // strange 3ds max OBJ output is not using 'O' verb
-                    if (words.ElementAt(1).Span.Equals("object", StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        currentObject = new MeshObject()
-                        {
-                            Name = words.ElementAt(2).ToString()
-                        };
-                        list.Add(currentObject);
-                        currentMaterialName = null;
-                        Console.WriteLine($"Reading object {currentObject.Name}");
-                    }
-                }
-            }
-            else if (MemoryExtensions.Equals(verb, "v", StringComparison.InvariantCultureIgnoreCase))
+            if(verb.SequenceEqual(vSpan) || verb.SequenceEqual(VSpan))
             {
                 var i = 0;
                 var arr = new double[3];
@@ -63,7 +58,7 @@ public sealed class ObjReader : IInputReader
                 }
                 vertices.Add(arr);
             }
-            else if (MemoryExtensions.Equals(verb, "vn", StringComparison.InvariantCultureIgnoreCase))
+            else if (verb.SequenceEqual(vnSpan) || verb.SequenceEqual(VNSpan))
             {
                 var i = 0;
                 var arr = new double[3];
@@ -78,7 +73,7 @@ public sealed class ObjReader : IInputReader
                 //           FastDoubleParser.ParseDouble(words.ElementAt(3).Span)
                 //        });
             }
-            else if (MemoryExtensions.Equals(verb, "vt", StringComparison.InvariantCultureIgnoreCase))
+            else if (verb.SequenceEqual(vtSpan) || verb.SequenceEqual(VTSpan))
             {
                 var i = 0;
                 var arr = new double[2];
@@ -99,16 +94,7 @@ public sealed class ObjReader : IInputReader
                 //            1.0d - FastDoubleParser.ParseDouble(words.ElementAt(2).Span)
                 //        });
             }
-            else if (MemoryExtensions.Equals(verb, "o", StringComparison.InvariantCultureIgnoreCase))
-            {
-                currentObject = new MeshObject()
-                {
-                    Name = words.ElementAt(1).ToString(),
-                };
-                list.Add(currentObject);
-                currentMaterialName = null;
-            }
-            else if (MemoryExtensions.Equals(verb, "f", StringComparison.InvariantCultureIgnoreCase))
+            else if (verb.SequenceEqual(fSpan) || verb.SequenceEqual(FSpan))
             {
                 var strides = new Stride[3];
                 int si = 0;
@@ -149,6 +135,32 @@ public sealed class ObjReader : IInputReader
 
                 currentObject.Strides.AddRange(strides);
                 currentObject.Faces.Add(face);
+            }
+            else if (verb.SequenceEqual(oSpan) || verb.SequenceEqual(OSpan))
+            {
+                currentObject = new MeshObject()
+                {
+                    Name = words.ElementAt(1).ToString(),
+                };
+                list.Add(currentObject);
+                currentMaterialName = null;
+            }
+            else if (verb.SequenceEqual(commentSpan))
+            {
+                if (words.Count() == 3)
+                {
+                    // strange 3ds max OBJ output is not using 'O' verb
+                    if (words.ElementAt(1).Span.Equals("object", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        currentObject = new MeshObject()
+                        {
+                            Name = words.ElementAt(2).ToString()
+                        };
+                        list.Add(currentObject);
+                        currentMaterialName = null;
+                        Console.WriteLine($"Reading object {currentObject.Name}");
+                    }
+                }
             }
             //case "MTLLIB":
             //    break;
