@@ -48,7 +48,7 @@ public sealed class ObjReader : IInputReader
 
             var str = verb.ToString();
 
-            if(verb.SequenceEqual(vSpan) || verb.SequenceEqual(VSpan))
+            if (verb.SequenceEqual(vSpan) || verb.SequenceEqual(VSpan))
             {
                 var i = 0;
                 var arr = new double[3];
@@ -100,25 +100,24 @@ public sealed class ObjReader : IInputReader
                 int si = 0;
                 foreach (var word in words.Skip(1))
                 {
-                    var faceIndices = word.Span.Split('/');
+                    var windowSpan = word.Span;
+                    var faceSpan = windowSpan.FirstSplit('/', out var nextIndex);
+                    var vertexIndex = int.Parse(faceSpan, NumberStyles.None, CultureInfo.InvariantCulture) - 1;
+                    
+                    windowSpan = windowSpan.Slice(nextIndex);
+                    faceSpan = windowSpan.FirstSplit('/', out nextIndex);
+                    var uvIndex = int.Parse(faceSpan, NumberStyles.None, CultureInfo.InvariantCulture) - 1;
+
+                    windowSpan = windowSpan.Slice(nextIndex);
+                    var normalIndex = int.Parse(windowSpan, NumberStyles.None, CultureInfo.InvariantCulture) - 1;
+
                     strides[si++] = new Stride
                     {
-                        Coordinates = vertices.ElementAt(int.Parse(faceIndices[0], CultureInfo.InvariantCulture) - 1),
-                        Uvs = uvs.ElementAt(int.Parse(faceIndices[1], CultureInfo.InvariantCulture) - 1),
-                        Normals = normals.ElementAt(int.Parse(faceIndices[2], CultureInfo.InvariantCulture) - 1)
+                        Coordinates = vertices.ElementAt(vertexIndex),
+                        Uvs = uvs.ElementAt(uvIndex),
+                        Normals = normals.ElementAt(normalIndex)
                     };
                 }
-                //var strides = words.Skip(1)
-                //    .Select(faceVertexString =>
-                //    {
-                //        var faceIndices = faceVertexString.ToString().Split("/");
-                //        return new Stride
-                //        {
-                //            Coordinates = vertices.ElementAt(int.Parse(faceIndices[0], CultureInfo.InvariantCulture) - 1),
-                //            Uvs = uvs.ElementAt(int.Parse(faceIndices[1], CultureInfo.InvariantCulture) - 1),
-                //            Normals = normals.ElementAt(int.Parse(faceIndices[2], CultureInfo.InvariantCulture) - 1)
-                //        };
-                //    }).ToList();
 
                 var face = new Face()
                 {
