@@ -22,8 +22,6 @@ public sealed class ObjReader : IInputReader
 
     public Task<IEnumerable<MeshObject>> ReadInput(InputSettings inputData)
     {
-        //GC.TryStartNoGCRegion(100 * 1024 * 1024);
-
         var commentSpan = "#".AsSpan();
         var vSpan = "v".AsSpan();
         var VSpan = "V".AsSpan();
@@ -182,8 +180,6 @@ public sealed class ObjReader : IInputReader
         }
         sw.Stop();
         Console.WriteLine($"Read time: {sw.Elapsed}");
-
-        //GC.EndNoGCRegion();
 
         return Task.FromResult(list.AsEnumerable());
     }

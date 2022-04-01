@@ -7,9 +7,9 @@ public sealed class StrideOriginalIndexComparer : IComparer<Stride>
 
 public sealed class Stride : IComparable<Stride>
 {
-    public double[] Coordinates { get; set; } = new double[3];
-    public double[] Uvs { get; set; } = new double[2];
-    public double[] Normals { get; set; } = new double[3];
+    public double[] Coordinates { get; set; }
+    public double[] Uvs { get; set; }
+    public double[] Normals { get; set; }
 
     public Face Face { get; set; }
     public int OriginalIndexInFace { get; set; }
