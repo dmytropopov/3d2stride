@@ -54,8 +54,6 @@ public sealed class ObjReader : IInputReader
             lineSpan = lineSpan.Slice(lineNextIndex);
             ReadOnlySpan<char> wordSpan;
 
-            var str = verb.ToString();
-
             if (verb.SequenceEqual(vSpan) || verb.SequenceEqual(VSpan))
             {
                 var arr = new double[3];
@@ -111,9 +109,9 @@ public sealed class ObjReader : IInputReader
 
                     strides[si] = new Stride
                     {
-                        Coordinates = vertices.ElementAt(vertexIndex),
-                        Uvs = uvs.ElementAt(uvIndex),
-                        Normals = normals.ElementAt(normalIndex)
+                        Coordinates = vertices[vertexIndex],
+                        Uvs = uvs[uvIndex],
+                        Normals = normals[normalIndex]
                     };
                 }
 
