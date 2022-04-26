@@ -22,10 +22,6 @@ public sealed class MeshOptimizer
         Stopwatch sw = new();
         sw.Start();
 
-        sw.Stop();
-        _console.WriteLine($"Time: {sw.Elapsed}");
-
-        sw.Restart();
         SortedList<Stride, Stride> sorted = new();
         SortedList<Stride, Stride> resorted = new(new StrideOriginalIndexComparer());
         foreach (var stride in meshObject.Strides)

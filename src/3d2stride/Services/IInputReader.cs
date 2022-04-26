@@ -4,5 +4,5 @@ namespace StrideGenerator.Services;
 
 public interface IInputReader
 {
-    public Task<IEnumerable<MeshObject>> ReadInput(InputSettings inputData);
+    public Task<IEnumerable<MeshObject>> ReadInput(InputSettings inputData, OutputSettings outputSettings);
 }

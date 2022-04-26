@@ -47,11 +47,12 @@ public sealed class OutputWriter : IOutputWriter
 
             foreach (var stride in optimized.Strides)
             {
-                stridesWriter.Write((float)stride.Coordinates[0]);
-                stridesWriter.Write((float)stride.Coordinates[1]);
-                stridesWriter.Write((float)stride.Coordinates[2]);
-                stridesWriter.Write((float)stride.Uvs[0]);
-                stridesWriter.Write((float)stride.Uvs[1]);
+                stridesWriter.Write(stride.Data);
+                //stridesWriter.Write((float)stride.Coordinates[0]);
+                //stridesWriter.Write((float)stride.Coordinates[1]);
+                //stridesWriter.Write((float)stride.Coordinates[2]);
+                //stridesWriter.Write((float)stride.Uvs[0]);
+                //stridesWriter.Write((float)stride.Uvs[1]);
             }
 
             foreach (var face in optimized.Faces)

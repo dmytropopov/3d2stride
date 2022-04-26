@@ -7,9 +7,10 @@ public sealed class StrideOriginalIndexComparer : IComparer<Stride>
 
 public sealed class Stride : IComparable<Stride>
 {
-    public double[] Coordinates { get; set; }
-    public double[] Uvs { get; set; }
-    public double[] Normals { get; set; }
+    public byte[] Data { get; }
+    //public double[] Coordinates { get; set; }
+    //public double[] Uvs { get; set; }
+    //public double[] Normals { get; set; }
 
     public Face Face { get; set; }
     public int OriginalIndexInFace { get; set; }
@@ -23,21 +24,35 @@ public sealed class Stride : IComparable<Stride>
 
     public override int GetHashCode() => 0;
 
-    public int CompareTo(Stride? other)
+    public Stride(int size)
     {
-        var compare0 = Coordinates[0].CompareTo(other.Coordinates[0]);
-        if (compare0 != 0) return compare0;
+        Data = new byte[size];
+    }
 
-        var compare1 = Coordinates[1].CompareTo(other.Coordinates[1]);
-        if (compare1 != 0) return compare1;
+    public int CompareTo(Stride other)
+    {
+        for (var i = 0; i < Data.Length; i++)
+        {
+            var comparison = Data[i] - other.Data[i];
+            if (comparison != 0)
+            {
+                return comparison;
+            }
+        }
+        return 0;
+        //var compare0 = Coordinates[0].CompareTo(other.Coordinates[0]);
+        //if (compare0 != 0) return compare0;
 
-        var compare2 = Coordinates[2].CompareTo(other.Coordinates[2]);
-        if (compare2 != 0) return compare2;
+        //var compare1 = Coordinates[1].CompareTo(other.Coordinates[1]);
+        //if (compare1 != 0) return compare1;
 
-        var compare3 = Uvs[0].CompareTo(other.Uvs[0]);
-        if (compare3 != 0) return compare3;
+        //var compare2 = Coordinates[2].CompareTo(other.Coordinates[2]);
+        //if (compare2 != 0) return compare2;
 
-        var compare4 = Uvs[1].CompareTo(other.Uvs[1]);
-        return compare4;
+        //var compare3 = Uvs[0].CompareTo(other.Uvs[0]);
+        //if (compare3 != 0) return compare3;
+
+        //var compare4 = Uvs[1].CompareTo(other.Uvs[1]);
+        //return compare4;
     }
 }

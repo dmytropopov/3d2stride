@@ -11,16 +11,16 @@ namespace StrideGenerator.Services.Obj;
 public sealed class ObjReader : IInputReader
 {
     private readonly ILogger<ObjReader> _logger;
-    private readonly List<double[]> vertices = new List<double[]>(65536);
-    private readonly List<double[]> normals = new List<double[]>(65536);
-    private readonly List<double[]> uvs = new List<double[]>(65536);
+    private readonly List<float[]> vertices = new List<float[]>(65536);
+    private readonly List<float[]> normals = new List<float[]>(65536);
+    private readonly List<float[]> uvs = new List<float[]>(65536);
 
     public ObjReader(ILogger<ObjReader> logger)
     {
         _logger = logger;
     }
 
-    public Task<IEnumerable<MeshObject>> ReadInput(InputSettings inputData)
+    public Task<IEnumerable<MeshObject>> ReadInput(InputSettings inputData, OutputSettings outputSettings)
     {
         var commentSpan = "#".AsSpan();
         var vSpan = "v".AsSpan();
@@ -34,6 +34,8 @@ public sealed class ObjReader : IInputReader
         var fSpan = "f".AsSpan();
         var FSpan = "F".AsSpan();
         var objectSpan = "object".AsSpan();
+
+        int strideSize = outputSettings.OutputAttributes.GetStrideSize();
 
         Stopwatch sw = new();
         sw.Start();
@@ -56,37 +58,37 @@ public sealed class ObjReader : IInputReader
 
             if (verb.SequenceEqual(vSpan) || verb.SequenceEqual(VSpan))
             {
-                var arr = new double[3];
+                var arr = new float[3];
                 for (var i = 0; i < 3; i++)
                 {
                     lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
-                    arr[i] = FastDoubleParser.ParseDouble(wordSpan);
+                    arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
                 }
                 vertices.Add(arr);
             }
             else if (verb.SequenceEqual(vnSpan) || verb.SequenceEqual(VNSpan))
             {
-                var arr = new double[3];
-                for (var i = 0; i < 3; i++)
-                {
-                    lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
-                    arr[i] = FastDoubleParser.ParseDouble(wordSpan);
-                }
-                normals.Add(arr);
+                //var arr = new float[3];
+                //for (var i = 0; i < 3; i++)
+                //{
+                //    lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
+                //    arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
+                //}
+                //normals.Add(arr);
             }
             else if (verb.SequenceEqual(vtSpan) || verb.SequenceEqual(VTSpan))
             {
-                var arr = new double[2];
+                var arr = new float[2];
                 for (var i = 0; i < 2; i++)
                 {
                     lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
                     if (i == 0)
                     {
-                        arr[i] = FastDoubleParser.ParseDouble(wordSpan);
+                        arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
                     }
                     else if (i == 1)
                     {
-                        arr[i] = 1.0d - FastDoubleParser.ParseDouble(wordSpan);
+                        arr[i] = 1.0f - (float)FastDoubleParser.ParseDouble(wordSpan);
                     }
                 }
                 uvs.Add(arr);
@@ -107,12 +109,21 @@ public sealed class ObjReader : IInputReader
                     wordSpan = wordSpan.Slice(nextIndex);
                     var normalIndex = int.Parse(wordSpan, NumberStyles.None, CultureInfo.InvariantCulture) - 1;
 
-                    strides[si] = new Stride
+                    var stride = new Stride(strideSize);
+                    strides[si] = stride;
+                    BitConverter.GetBytes(vertices[vertexIndex][0]);
+                    unsafe
                     {
-                        Coordinates = vertices[vertexIndex],
-                        Uvs = uvs[uvIndex],
-                        Normals = normals[normalIndex]
-                    };
+                        fixed (void* ptr = &stride.Data[0])
+                        {
+                            float* floatPtr = (float*)ptr;
+                            *floatPtr++ = vertices[vertexIndex][0];
+                            *floatPtr++ = vertices[vertexIndex][1];
+                            *floatPtr++ = vertices[vertexIndex][2];
+                            *floatPtr++ = uvs[uvIndex][0];
+                            *floatPtr++ = uvs[uvIndex][1];
+                        }
+                    }
                 }
 
                 var face = new Face()
@@ -147,7 +158,7 @@ public sealed class ObjReader : IInputReader
                 if (wordSpan.SequenceEqual(objectSpan))
                 {
                     lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
-                    if(wordSpan.Length > 0)
+                    if (wordSpan.Length > 0)
                     {
                         currentObject = new MeshObject()
                         {

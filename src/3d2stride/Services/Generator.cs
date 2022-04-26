@@ -23,7 +23,7 @@ public sealed class Generator : IGenerator
         foreach (var inputSettings in inputs)
         {
             var reader = _inputReaderFactory.GetReader(inputSettings.FileFormat);
-            var meshes = await reader.ReadInput(inputSettings);
+            var meshes = await reader.ReadInput(inputSettings, outputSettings);
             
             await _outputWriter.Write(meshes, inputs, outputSettings);
         }
