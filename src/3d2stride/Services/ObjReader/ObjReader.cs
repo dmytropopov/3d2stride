@@ -11,14 +11,18 @@ namespace StrideGenerator.Services.Obj;
 public sealed class ObjReader : IInputReader
 {
     private readonly ILogger<ObjReader> _logger;
-    private readonly List<float[]> vertices = new List<float[]>(65536);
-    private readonly List<float[]> normals = new List<float[]>(65536);
-    private readonly List<float[]> uvs = new List<float[]>(65536);
+    private readonly List<float[]> vertices = new(65536);
+    private readonly List<float[]> normals = new(65536);
+    private readonly List<float[]> uvs = new(65536);
 
     public ObjReader(ILogger<ObjReader> logger)
     {
         _logger = logger;
     }
+
+    private bool _readNormals;
+    private bool _readUVs;
+    private int _attributesCount;
 
     public Task<IEnumerable<MeshObject>> ReadInput(InputSettings inputData, OutputSettings outputSettings)
     {
@@ -36,10 +40,24 @@ public sealed class ObjReader : IInputReader
         var objectSpan = "object".AsSpan();
 
         int strideSize = outputSettings.OutputAttributes.GetStrideSize();
+        _readNormals = outputSettings.OutputAttributes.Attributes.Any(x => x.AttributeInfo.AttributeType == AttributeType.Normal);
+        _readUVs = outputSettings.OutputAttributes.Attributes.Any(x => x.AttributeInfo.AttributeType == AttributeType.TextureCoords
+            || x.AttributeInfo.AttributeType == AttributeType.TextureCoordU
+            || x.AttributeInfo.AttributeType == AttributeType.TextureCoordV);
+        _attributesCount = outputSettings.OutputAttributes.Attributes.Count;
+
+        if (outputSettings.OutputAttributes.Attributes.Any(x => x.Index > 0))
+        {
+            throw new Exception("Reading attributes with index > 0 is not supported (yet).");
+        }
+        if (outputSettings.OutputAttributes.Attributes.Any(x => x.Format == AttributeFormat.HalfFloat))
+        {
+            throw new Exception("Half-float attributes are not supported (yet).");
+        }
 
         Stopwatch sw = new();
         sw.Start();
-        List<MeshObject> list = new List<MeshObject>();
+        List<MeshObject> list = new();
 
         var lineNumber = 0;
         var currentObject = new MeshObject();
@@ -68,30 +86,36 @@ public sealed class ObjReader : IInputReader
             }
             else if (verb.SequenceEqual(vnSpan) || verb.SequenceEqual(VNSpan))
             {
-                //var arr = new float[3];
-                //for (var i = 0; i < 3; i++)
-                //{
-                //    lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
-                //    arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
-                //}
-                //normals.Add(arr);
+                if (_readNormals)
+                {
+                    var arr = new float[3];
+                    for (var i = 0; i < 3; i++)
+                    {
+                        lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
+                        arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
+                    }
+                    normals.Add(arr);
+                }
             }
             else if (verb.SequenceEqual(vtSpan) || verb.SequenceEqual(VTSpan))
             {
-                var arr = new float[2];
-                for (var i = 0; i < 2; i++)
+                if (_readUVs)
                 {
-                    lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
-                    if (i == 0)
+                    var arr = new float[2];
+                    for (var i = 0; i < 2; i++)
                     {
-                        arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
+                        lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
+                        if (i == 0)
+                        {
+                            arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
+                        }
+                        else if (i == 1)
+                        {
+                            arr[i] = 1.0f - (float)FastDoubleParser.ParseDouble(wordSpan);
+                        }
                     }
-                    else if (i == 1)
-                    {
-                        arr[i] = 1.0f - (float)FastDoubleParser.ParseDouble(wordSpan);
-                    }
+                    uvs.Add(arr);
                 }
-                uvs.Add(arr);
             }
             else if (verb.SequenceEqual(fSpan) || verb.SequenceEqual(FSpan))
             {
@@ -111,17 +135,40 @@ public sealed class ObjReader : IInputReader
 
                     var stride = new Stride(strideSize);
                     strides[si] = stride;
-                    BitConverter.GetBytes(vertices[vertexIndex][0]);
+                    //BitConverter.GetBytes(vertices[vertexIndex][0]);
                     unsafe
                     {
                         fixed (void* ptr = &stride.Data[0])
                         {
                             float* floatPtr = (float*)ptr;
-                            *floatPtr++ = vertices[vertexIndex][0];
-                            *floatPtr++ = vertices[vertexIndex][1];
-                            *floatPtr++ = vertices[vertexIndex][2];
-                            *floatPtr++ = uvs[uvIndex][0];
-                            *floatPtr++ = uvs[uvIndex][1];
+                            for (int attributeIndex = 0; attributeIndex < _attributesCount; attributeIndex++)
+                            {
+                                if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.Vertex)
+                                {
+                                    *floatPtr++ = vertices[vertexIndex][0];
+                                    *floatPtr++ = vertices[vertexIndex][1];
+                                    *floatPtr++ = vertices[vertexIndex][2];
+                                }
+                                if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.TextureCoords)
+                                {
+                                    *floatPtr++ = uvs[uvIndex][0];
+                                    *floatPtr++ = uvs[uvIndex][1];
+                                }
+                                if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.TextureCoordU)
+                                {
+                                    *floatPtr++ = uvs[uvIndex][0];
+                                }
+                                if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.TextureCoordV)
+                                {
+                                    *floatPtr++ = uvs[uvIndex][1];
+                                }
+                                if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.Normal)
+                                {
+                                    *floatPtr++ = normals[normalIndex][0];
+                                    *floatPtr++ = normals[normalIndex][1];
+                                    *floatPtr++ = normals[normalIndex][2];
+                                }
+                            }
                         }
                     }
                 }
@@ -136,7 +183,7 @@ public sealed class ObjReader : IInputReader
                 {
                     s.Face = face;
                     s.OriginalIndexInFace = Array.IndexOf(face.Strides, s);
-                    s.OriginalIndex = currentObject.Strides.Count() + i++;
+                    s.OriginalIndex = currentObject.Strides.Count + i++;
                 }
 
                 currentObject.Strides.AddRange(strides);

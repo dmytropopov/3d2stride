@@ -21,7 +21,7 @@ public sealed class OutputWriter : IOutputWriter
     public Task Write(IEnumerable<MeshObject> meshes, IEnumerable<InputSettings> inputs, OutputSettings outputSettings)
     {
         var inputFileName = Path.ChangeExtension(inputs.First().FileName, "").TrimEnd('.');
-        if (meshes.Count() > 1 && !(outputSettings.FileName?.Contains("{") ?? false))
+        if (meshes.Count() > 1 && !(outputSettings.FileName?.Contains('{') ?? false))
         {
             _console.WriteLine("Multiple meshes found, but output does not contain template like {0} or {1} - using default template.");
             outputSettings.FileName = inputFileName + "{1}";
@@ -48,11 +48,6 @@ public sealed class OutputWriter : IOutputWriter
             foreach (var stride in optimized.Strides)
             {
                 stridesWriter.Write(stride.Data);
-                //stridesWriter.Write((float)stride.Coordinates[0]);
-                //stridesWriter.Write((float)stride.Coordinates[1]);
-                //stridesWriter.Write((float)stride.Coordinates[2]);
-                //stridesWriter.Write((float)stride.Uvs[0]);
-                //stridesWriter.Write((float)stride.Uvs[1]);
             }
 
             foreach (var face in optimized.Faces)

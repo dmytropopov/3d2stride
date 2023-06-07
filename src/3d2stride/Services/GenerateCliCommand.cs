@@ -14,6 +14,9 @@ public sealed class GenerateCliCommand
     [Required]
     public string[] InputFileNames { get; } = default!;
 
+    [Option("-s|--stride", CommandOptionType.SingleValue, Description = "Output stride format.")]
+    public string OutputStrideFormat { get; } = "Vt0:F,UV0:F";
+
     private readonly IGenerator _generator;
     private readonly ILogger<GenerateCliCommand> _logger;
 
@@ -33,14 +36,17 @@ public sealed class GenerateCliCommand
 
         var outputSettings = new OutputSettings()
         {
-            FileName = OutputFileName
+            FileName = OutputFileName,
+            OutputAttributes = OutputAttributes.Parse(OutputStrideFormat)
         };
+        Console.WriteLine("Output stride format: " + OutputStrideFormat);
+        Console.WriteLine("Output stride size: " + outputSettings.OutputAttributes.GetStrideSize());
 
         if (string.IsNullOrEmpty(outputSettings.FileName))
         {
             outputSettings.FileName = Path.ChangeExtension(inputSettings.First().FileName, "").TrimEnd('.');
         }
 
-        await _generator.Generate(inputSettings, new OutputSettings { FileName = OutputFileName });
+        await _generator.Generate(inputSettings, outputSettings);
     }
 }

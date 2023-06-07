@@ -1,0 +1,1 @@
+-i:d:\Work\webgl-lanhoso\data\models\lanhoso.obj
