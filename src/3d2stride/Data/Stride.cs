@@ -31,15 +31,16 @@ public sealed class Stride : IComparable<Stride>
 
     public int CompareTo(Stride other)
     {
-        for (var i = 0; i < Data.Length; i++)
-        {
-            var comparison = Data[i] - other.Data[i];
-            if (comparison != 0)
-            {
-                return comparison;
-            }
-        }
-        return 0;
+        return Data.AsSpan().SequenceCompareTo(other.Data);
+        //for (var i = 0; i < Data.Length; i++)
+        //{
+        //    var comparison = Data[i] - other.Data[i];
+        //    if (comparison != 0)
+        //    {
+        //        return comparison;
+        //    }
+        //}
+        //return 0;
         //var compare0 = Coordinates[0].CompareTo(other.Coordinates[0]);
         //if (compare0 != 0) return compare0;
 
