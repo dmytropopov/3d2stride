@@ -57,7 +57,7 @@ public sealed class ObjReader : IInputReader
 
         Stopwatch sw = new();
         sw.Start();
-        List<MeshObject> list = new();
+        List<MeshObject> objectsList = new();
 
         var lineNumber = 0;
         var currentObject = new MeshObject();
@@ -196,7 +196,7 @@ public sealed class ObjReader : IInputReader
                 {
                     Name = wordSpan.ToString()
                 };
-                list.Add(currentObject);
+                objectsList.Add(currentObject);
                 currentMaterialName = null;
             }
             else if (verb.SequenceEqual(commentSpan))
@@ -211,7 +211,7 @@ public sealed class ObjReader : IInputReader
                         {
                             Name = wordSpan.ToString()
                         };
-                        list.Add(currentObject);
+                        objectsList.Add(currentObject);
                         currentMaterialName = null;
                         Console.WriteLine($"Reading object {currentObject.Name}");
                     }
@@ -234,10 +234,17 @@ public sealed class ObjReader : IInputReader
 
             lineNumber++;
         }
+
+        // Obj file had no objects defined - add current object
+        if (objectsList.Count == 0)
+        {
+            objectsList.Add(currentObject);
+        }
+
         sw.Stop();
         Console.WriteLine($"Read time: {sw.Elapsed}");
 
-        return Task.FromResult(list.AsEnumerable());
+        return Task.FromResult(objectsList.AsEnumerable());
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
