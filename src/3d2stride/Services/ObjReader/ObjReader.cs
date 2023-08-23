@@ -243,19 +243,22 @@ public sealed class ObjReader : IInputReader
             }
             else if (verb.SequenceEqual(commentSpan))
             {
-                lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
-                if (wordSpan.SequenceEqual(objectSpan))
+                if (!outputSettings.MergeObjects) // ignore objects when in merge mode
                 {
                     lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
-                    if (wordSpan.Length > 0)
+                    if (wordSpan.SequenceEqual(objectSpan))
                     {
-                        currentObject = new MeshObject()
+                        lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
+                        if (wordSpan.Length > 0)
                         {
-                            Name = wordSpan.ToString()
-                        };
-                        objectsList.Add(currentObject);
-                        currentMaterialName = null;
-                        Console.WriteLine($"Reading object {currentObject.Name}");
+                            currentObject = new MeshObject()
+                            {
+                                Name = wordSpan.ToString()
+                            };
+                            objectsList.Add(currentObject);
+                            currentMaterialName = null;
+                            Console.WriteLine($"Reading object {currentObject.Name}");
+                        }
                     }
                 }
             }
