@@ -17,6 +17,9 @@ public sealed class GenerateCliCommand
     [Option("-s|--stride", CommandOptionType.SingleValue, Description = "Output stride format.")]
     public string OutputStrideFormat { get; } = "Vt0:F,UV0:F";
 
+    [Option("-m|--merge", Description = "Merge all objects in input to one output.")]
+    public bool MergeObjects { get; set; } = false;
+
     private readonly IGenerator _generator;
     private readonly ILogger<GenerateCliCommand> _logger;
 
@@ -37,7 +40,8 @@ public sealed class GenerateCliCommand
         var outputSettings = new OutputSettings()
         {
             FileName = OutputFileName,
-            OutputAttributes = OutputAttributes.Parse(OutputStrideFormat)
+            OutputAttributes = OutputAttributes.Parse(OutputStrideFormat),
+            MergeObjects = MergeObjects
         };
         Console.WriteLine("Output stride format: " + OutputStrideFormat);
         Console.WriteLine("Output stride size: " + outputSettings.OutputAttributes.GetStrideSize());

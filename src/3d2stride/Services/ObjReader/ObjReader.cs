@@ -50,10 +50,10 @@ public sealed class ObjReader : IInputReader
         {
             throw new Exception("Reading attributes with index > 0 is not supported (yet).");
         }
-        if (outputSettings.OutputAttributes.Attributes.Any(x => x.Format == AttributeFormat.HalfFloat))
-        {
-            throw new Exception("Half-float attributes are not supported (yet).");
-        }
+        //if (outputSettings.OutputAttributes.Attributes.Any(x => x.Format == AttributeFormat.HalfFloat))
+        //{
+        //    throw new Exception("Half-float attributes are not supported (yet).");
+        //}
 
         Stopwatch sw = new();
         sw.Start();
@@ -135,38 +135,77 @@ public sealed class ObjReader : IInputReader
 
                     var stride = new Stride(strideSize);
                     strides[si] = stride;
-                    //BitConverter.GetBytes(vertices[vertexIndex][0]);
                     unsafe
                     {
                         fixed (void* ptr = &stride.Data[0])
                         {
-                            float* floatPtr = (float*)ptr;
+                            byte* bytePtr = (byte*)ptr;
                             for (int attributeIndex = 0; attributeIndex < _attributesCount; attributeIndex++)
                             {
                                 if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.Vertex)
                                 {
-                                    *floatPtr++ = vertices[vertexIndex][0];
-                                    *floatPtr++ = vertices[vertexIndex][1];
-                                    *floatPtr++ = vertices[vertexIndex][2];
+                                    if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.Float)
+                                    {
+                                        writeFloat(vertices[vertexIndex][0], ref bytePtr);
+                                        writeFloat(vertices[vertexIndex][1], ref bytePtr);
+                                        writeFloat(vertices[vertexIndex][2], ref bytePtr);
+                                    }
+                                    else if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.HalfFloat)
+                                    {
+                                        writeHalfFloat(vertices[vertexIndex][0], ref bytePtr);
+                                        writeHalfFloat(vertices[vertexIndex][1], ref bytePtr);
+                                        writeHalfFloat(vertices[vertexIndex][2], ref bytePtr);
+                                    }
                                 }
                                 if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.TextureCoords)
                                 {
-                                    *floatPtr++ = uvs[uvIndex][0];
-                                    *floatPtr++ = uvs[uvIndex][1];
+                                    if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.Float)
+                                    {
+                                        writeFloat(uvs[uvIndex][0], ref bytePtr);
+                                        writeFloat(uvs[uvIndex][1], ref bytePtr);
+                                    }
+                                    else if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.HalfFloat)
+                                    {
+                                        writeHalfFloat(uvs[uvIndex][0], ref bytePtr);
+                                        writeHalfFloat(uvs[uvIndex][1], ref bytePtr);
+                                    }
                                 }
                                 if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.TextureCoordU)
                                 {
-                                    *floatPtr++ = uvs[uvIndex][0];
+                                    if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.Float)
+                                    {
+                                        writeFloat(uvs[uvIndex][0], ref bytePtr);
+                                    }
+                                    else if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.HalfFloat)
+                                    {
+                                        writeHalfFloat(uvs[uvIndex][0], ref bytePtr);
+                                    }
                                 }
                                 if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.TextureCoordV)
                                 {
-                                    *floatPtr++ = uvs[uvIndex][1];
+                                    if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.Float)
+                                    {
+                                        writeFloat(uvs[uvIndex][1], ref bytePtr);
+                                    }
+                                    else if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.HalfFloat)
+                                    {
+                                        writeHalfFloat(uvs[uvIndex][1], ref bytePtr);
+                                    }
                                 }
                                 if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.Normal)
                                 {
-                                    *floatPtr++ = normals[normalIndex][0];
-                                    *floatPtr++ = normals[normalIndex][1];
-                                    *floatPtr++ = normals[normalIndex][2];
+                                    if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.Float)
+                                    {
+                                        writeFloat(normals[normalIndex][0], ref bytePtr);
+                                        writeFloat(normals[normalIndex][1], ref bytePtr);
+                                        writeFloat(normals[normalIndex][2], ref bytePtr);
+                                    }
+                                    else if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.HalfFloat)
+                                    {
+                                        writeHalfFloat(normals[normalIndex][0], ref bytePtr);
+                                        writeHalfFloat(normals[normalIndex][1], ref bytePtr);
+                                        writeHalfFloat(normals[normalIndex][2], ref bytePtr);
+                                    }
                                 }
                             }
                         }
@@ -191,13 +230,16 @@ public sealed class ObjReader : IInputReader
             }
             else if (verb.SequenceEqual(oSpan) || verb.SequenceEqual(OSpan))
             {
-                lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
-                currentObject = new MeshObject()
+                if (!outputSettings.MergeObjects) // ignore objects when in merge mode
                 {
-                    Name = wordSpan.ToString()
-                };
-                objectsList.Add(currentObject);
-                currentMaterialName = null;
+                    lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
+                    currentObject = new MeshObject()
+                    {
+                        Name = wordSpan.ToString()
+                    };
+                    objectsList.Add(currentObject);
+                    currentMaterialName = null;
+                }
             }
             else if (verb.SequenceEqual(commentSpan))
             {
@@ -245,6 +287,20 @@ public sealed class ObjReader : IInputReader
         Console.WriteLine($"Read time: {sw.Elapsed}");
 
         return Task.FromResult(objectsList.AsEnumerable());
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe void writeFloat(float data, ref byte* bytePtr)
+    {
+        *(float*)bytePtr = data;
+        bytePtr += sizeof(float);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe void writeHalfFloat(float data, ref byte* bytePtr)
+    {
+        *(Half*)bytePtr = (Half)data;
+        bytePtr += sizeof(float);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
