@@ -1,4 +1,7 @@
-﻿namespace StrideGenerator.Data;
+﻿using StrideGenerator.Services;
+using System.Runtime.CompilerServices;
+
+namespace StrideGenerator.Data;
 
 public sealed class StrideOriginalIndexComparer : IComparer<Stride>
 {
@@ -8,9 +11,6 @@ public sealed class StrideOriginalIndexComparer : IComparer<Stride>
 public sealed class Stride : IComparable<Stride>
 {
     public byte[] Data { get; }
-    //public double[] Coordinates { get; set; }
-    //public double[] Uvs { get; set; }
-    //public double[] Normals { get; set; }
 
     public Face Face { get; set; }
     public int OriginalIndexInFace { get; set; }
@@ -32,28 +32,43 @@ public sealed class Stride : IComparable<Stride>
     public int CompareTo(Stride other)
     {
         return Data.AsSpan().SequenceCompareTo(other.Data);
-        //for (var i = 0; i < Data.Length; i++)
-        //{
-        //    var comparison = Data[i] - other.Data[i];
-        //    if (comparison != 0)
-        //    {
-        //        return comparison;
-        //    }
-        //}
-        //return 0;
-        //var compare0 = Coordinates[0].CompareTo(other.Coordinates[0]);
-        //if (compare0 != 0) return compare0;
+    }
 
-        //var compare1 = Coordinates[1].CompareTo(other.Coordinates[1]);
-        //if (compare1 != 0) return compare1;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public unsafe void WriteInFormat(float data, ref byte* bytePtr, AttributeFormat attributeFormat)
+    {
+        switch (attributeFormat)
+        {
+            case AttributeFormat.Float:
+                WriteFloat(data, ref bytePtr);
+                break;
+            case AttributeFormat.HalfFloat:
+                WriteHalfFloat(data, ref bytePtr);
+                break;
+            case AttributeFormat.UnsignedByte:
+                WriteSignedByte(data, ref bytePtr);
+                break;
+        };
+    }
 
-        //var compare2 = Coordinates[2].CompareTo(other.Coordinates[2]);
-        //if (compare2 != 0) return compare2;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe void WriteFloat(float data, ref byte* bytePtr)
+    {
+        *(float*)bytePtr = data;
+        bytePtr += sizeof(float);
+    }
 
-        //var compare3 = Uvs[0].CompareTo(other.Uvs[0]);
-        //if (compare3 != 0) return compare3;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe void WriteHalfFloat(float data, ref byte* bytePtr)
+    {
+        *(Half*)bytePtr = (Half)data;
+        bytePtr += sizeof(Half);
+    }
 
-        //var compare4 = Uvs[1].CompareTo(other.Uvs[1]);
-        //return compare4;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe void WriteSignedByte(float data, ref byte* bytePtr)
+    {
+        *bytePtr = (byte)(data * 255);
+        bytePtr += sizeof(byte);
     }
 }

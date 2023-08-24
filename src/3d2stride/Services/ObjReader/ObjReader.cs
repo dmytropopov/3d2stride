@@ -50,10 +50,6 @@ public sealed class ObjReader : IInputReader
         {
             throw new Exception("Reading attributes with index > 0 is not supported (yet).");
         }
-        //if (outputSettings.OutputAttributes.Attributes.Any(x => x.Format == AttributeFormat.HalfFloat))
-        //{
-        //    throw new Exception("Half-float attributes are not supported (yet).");
-        //}
 
         Stopwatch sw = new();
         sw.Start();
@@ -144,68 +140,28 @@ public sealed class ObjReader : IInputReader
                             {
                                 if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.Vertex)
                                 {
-                                    if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.Float)
-                                    {
-                                        writeFloat(vertices[vertexIndex][0], ref bytePtr);
-                                        writeFloat(vertices[vertexIndex][1], ref bytePtr);
-                                        writeFloat(vertices[vertexIndex][2], ref bytePtr);
-                                    }
-                                    else if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.HalfFloat)
-                                    {
-                                        writeHalfFloat(vertices[vertexIndex][0], ref bytePtr);
-                                        writeHalfFloat(vertices[vertexIndex][1], ref bytePtr);
-                                        writeHalfFloat(vertices[vertexIndex][2], ref bytePtr);
-                                    }
+                                    stride.WriteInFormat(vertices[vertexIndex][0], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
+                                    stride.WriteInFormat(vertices[vertexIndex][1], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
+                                    stride.WriteInFormat(vertices[vertexIndex][2], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
                                 }
                                 if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.TextureCoords)
                                 {
-                                    if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.Float)
-                                    {
-                                        writeFloat(uvs[uvIndex][0], ref bytePtr);
-                                        writeFloat(uvs[uvIndex][1], ref bytePtr);
-                                    }
-                                    else if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.HalfFloat)
-                                    {
-                                        writeHalfFloat(uvs[uvIndex][0], ref bytePtr);
-                                        writeHalfFloat(uvs[uvIndex][1], ref bytePtr);
-                                    }
+                                    stride.WriteInFormat(uvs[uvIndex][0], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
+                                    stride.WriteInFormat(uvs[uvIndex][1], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
                                 }
                                 if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.TextureCoordU)
                                 {
-                                    if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.Float)
-                                    {
-                                        writeFloat(uvs[uvIndex][0], ref bytePtr);
-                                    }
-                                    else if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.HalfFloat)
-                                    {
-                                        writeHalfFloat(uvs[uvIndex][0], ref bytePtr);
-                                    }
+                                    stride.WriteInFormat(uvs[uvIndex][0], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
                                 }
                                 if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.TextureCoordV)
                                 {
-                                    if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.Float)
-                                    {
-                                        writeFloat(uvs[uvIndex][1], ref bytePtr);
-                                    }
-                                    else if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.HalfFloat)
-                                    {
-                                        writeHalfFloat(uvs[uvIndex][1], ref bytePtr);
-                                    }
+                                    stride.WriteInFormat(uvs[uvIndex][1], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
                                 }
                                 if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.Normal)
                                 {
-                                    if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.Float)
-                                    {
-                                        writeFloat(normals[normalIndex][0], ref bytePtr);
-                                        writeFloat(normals[normalIndex][1], ref bytePtr);
-                                        writeFloat(normals[normalIndex][2], ref bytePtr);
-                                    }
-                                    else if (outputSettings.OutputAttributes.Attributes[attributeIndex].Format == AttributeFormat.HalfFloat)
-                                    {
-                                        writeHalfFloat(normals[normalIndex][0], ref bytePtr);
-                                        writeHalfFloat(normals[normalIndex][1], ref bytePtr);
-                                        writeHalfFloat(normals[normalIndex][2], ref bytePtr);
-                                    }
+                                    stride.WriteInFormat(normals[normalIndex][0], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
+                                    stride.WriteInFormat(normals[normalIndex][1], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
+                                    stride.WriteInFormat(normals[normalIndex][2], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
                                 }
                             }
                         }
@@ -290,20 +246,6 @@ public sealed class ObjReader : IInputReader
         Console.WriteLine($"Read time: {sw.Elapsed}");
 
         return Task.FromResult(objectsList.AsEnumerable());
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private unsafe void writeFloat(float data, ref byte* bytePtr)
-    {
-        *(float*)bytePtr = data;
-        bytePtr += sizeof(float);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private unsafe void writeHalfFloat(float data, ref byte* bytePtr)
-    {
-        *(Half*)bytePtr = (Half)data;
-        bytePtr += sizeof(float);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

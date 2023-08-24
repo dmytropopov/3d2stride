@@ -6,7 +6,8 @@ public enum AttributeFormat
 {
     Unknown = 0,
     Float,
-    HalfFloat
+    HalfFloat,
+    UnsignedByte
 }
 
 public enum AttributeType
@@ -39,7 +40,8 @@ public class OutputAttributes
     private static readonly Dictionary<AttributeFormat, int> formatSizes = new()
     {
         { AttributeFormat.Float, sizeof(float) },
-        { AttributeFormat.HalfFloat, sizeof(float) / 2 }
+        { AttributeFormat.HalfFloat, sizeof(float) / 2 },
+        { AttributeFormat.UnsignedByte, sizeof(byte) }
     };
 
     public List<Attribute> Attributes { get; private set; } = new();
@@ -75,6 +77,7 @@ public class OutputAttributes
             {
                 "F" => AttributeFormat.Float,
                 "HF" => AttributeFormat.HalfFloat,
+                "UB" => AttributeFormat.UnsignedByte,
                 _ => throw new NotImplementedException("Output format not recognized: " + format),
             };
 
