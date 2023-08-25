@@ -33,6 +33,9 @@ public sealed class OutputWriter : IOutputWriter
         }
 
         var sw = Stopwatch.StartNew();
+        var alignmentPadding = outputSettings.Alignment != 0 
+            ? new byte[outputSettings.Alignment - outputSettings.OutputAttributes.GetStrideSize()] 
+            : new byte[0];
 
         int i = 0;
         foreach (var optimized in meshes.Select(m => _meshOptimizer.GetOptimized(m)))
@@ -48,6 +51,10 @@ public sealed class OutputWriter : IOutputWriter
             foreach (var stride in optimized.Strides)
             {
                 stridesWriter.Write(stride.Data);
+                if (outputSettings.Alignment != 0)
+                {
+                    stridesWriter.Write(alignmentPadding);
+                }
             }
 
             foreach (var face in optimized.Faces)

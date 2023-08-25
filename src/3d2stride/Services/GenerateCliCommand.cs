@@ -20,6 +20,9 @@ public sealed class GenerateCliCommand
     [Option("-m|--merge", Description = "Merge all objects in input to one output.")]
     public bool MergeObjects { get; set; } = false;
 
+    [Option("-a|--align", CommandOptionType.SingleValue, Description = "Output stride alignment. 0 for no alignment.")]
+    public int OutputStrideAlignment { get; } = 0;
+
     private readonly IGenerator _generator;
     private readonly ILogger<GenerateCliCommand> _logger;
 
@@ -41,10 +44,18 @@ public sealed class GenerateCliCommand
         {
             FileName = OutputFileName,
             OutputAttributes = OutputAttributes.Parse(OutputStrideFormat),
-            MergeObjects = MergeObjects
+            MergeObjects = MergeObjects,
+            Alignment = OutputStrideAlignment
         };
         Console.WriteLine("Output stride format: " + OutputStrideFormat);
-        Console.WriteLine("Output stride size: " + outputSettings.OutputAttributes.GetStrideSize());
+        int strideSize = outputSettings.OutputAttributes.GetStrideSize();
+        if (OutputStrideAlignment != 0 && OutputStrideAlignment < strideSize)
+        {
+            throw new Exception($"Alignment can't be less than stride data size ({strideSize}).");
+        }
+
+        Console.WriteLine("Stride data size: " + strideSize);
+        Console.WriteLine("Aligned stride size: " + OutputStrideAlignment);
 
         if (string.IsNullOrEmpty(outputSettings.FileName))
         {
