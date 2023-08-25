@@ -7,8 +7,9 @@ namespace StrideGenerator.Services;
 [Command(Name = "Generate", Description = "Generate output stride/indices files.")]
 public sealed class GenerateCliCommand
 {
+    [FileExists]
     [Argument(0, Description = "Output file name. {0} for object name. {1} for zero-based index.", Name = "out-file")]
-    public string OutputFileName { get; }
+    public string OutputFileName { get; } = null!;
 
     [Option("-i|--input", CommandOptionType.MultipleValue, Description = "Input file name(s). Multiple options are supported.")]
     [Required]
@@ -23,17 +24,26 @@ public sealed class GenerateCliCommand
     [Option("-a|--align", CommandOptionType.SingleValue, Description = "Output stride alignment. 0 for no alignment.")]
     public int OutputStrideAlignment { get; } = 0;
 
+    [Option("-v|--verbosity", CommandOptionType.SingleValue, Description = "Verbosity.")]
+    public Verbosity Verbosity { get; } = Verbosity.Normal;
+
+    private readonly GlobalOptions _globalOptions;
     private readonly IGenerator _generator;
     private readonly ILogger<GenerateCliCommand> _logger;
+    private readonly IConsole _console;
 
-    public GenerateCliCommand(IGenerator generator, ILogger<GenerateCliCommand> logger)
+    public GenerateCliCommand(IGenerator generator, ILogger<GenerateCliCommand> logger, IConsole console, GlobalOptions globalOptions)
     {
+        _globalOptions = globalOptions;
         _generator = generator;
         _logger = logger;
+        _console = console;
     }
 
     public async Task OnExecuteAsync()
     {
+        SetGlobalOptions();
+
         var inputSettings = InputFileNames.Select(s => new InputSettings
         {
             FileName = s,
@@ -47,15 +57,15 @@ public sealed class GenerateCliCommand
             MergeObjects = MergeObjects,
             Alignment = OutputStrideAlignment
         };
-        Console.WriteLine("Output stride format: " + OutputStrideFormat);
+        _console.WriteLine("Output stride format: " + OutputStrideFormat);
         int strideSize = outputSettings.OutputAttributes.GetStrideSize();
         if (OutputStrideAlignment != 0 && OutputStrideAlignment < strideSize)
         {
             throw new Exception($"Alignment can't be less than stride data size ({strideSize}).");
         }
 
-        Console.WriteLine("Stride data size: " + strideSize);
-        Console.WriteLine("Aligned stride size: " + OutputStrideAlignment);
+        _console.WriteLine("Stride data size: " + strideSize);
+        _console.WriteLine("Aligned stride size: " + OutputStrideAlignment);
 
         if (string.IsNullOrEmpty(outputSettings.FileName))
         {
@@ -63,5 +73,10 @@ public sealed class GenerateCliCommand
         }
 
         await _generator.Generate(inputSettings, outputSettings);
+    }
+
+    private void SetGlobalOptions()
+    {
+        _globalOptions.Verbosity = Verbosity;
     }
 }

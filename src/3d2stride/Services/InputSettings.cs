@@ -2,6 +2,17 @@
 
 namespace StrideGenerator.Services;
 
+public class GlobalOptions
+{
+    public Verbosity Verbosity { get; set; }
+}
+
+public enum Verbosity
+{
+    Silent = 0,
+    Normal = 1
+}
+
 public enum AttributeFormat
 {
     Unknown = 0,
@@ -91,6 +102,6 @@ public class OutputAttributes
     public int GetStrideSize() => Attributes.Sum(x => x.totalSize);
 }
 
-public readonly record struct InputSettings(string FileName, string FileFormat, InputAttributes InputAttributes);
+public readonly record struct InputSettings(string FileName, string FileFormat, InputAttributes InputAttributes, Verbosity Verbosity);
 
 public record struct OutputSettings(string FileName, OutputAttributes OutputAttributes, bool MergeObjects, int Alignment);

@@ -41,7 +41,7 @@ public sealed class OutputWriter : IOutputWriter
         foreach (var optimized in meshes.Select(m => _meshOptimizer.GetOptimized(m)))
         {
             var fileName = GetFileName(outputSettings, i++, optimized.Name);
-            Console.WriteLine($"Writing object {optimized.Name} to file {fileName}");
+            _console.WriteLine($"Writing object {optimized.Name} to file {fileName}");
 
             using var stridesStream = File.Open(Path.ChangeExtension(fileName + "-strides", "bin"), FileMode.Create);
             using var stridesWriter = new BinaryWriter(stridesStream);
@@ -71,15 +71,11 @@ public sealed class OutputWriter : IOutputWriter
             indicesStream.Close();
         }
         sw.Stop();
-        Console.WriteLine($"Write time: {sw.Elapsed}");
+        _console.WriteLine($"Write time: {sw.Elapsed}");
 
         return Task.CompletedTask;
     }
 
-    private static string GetFileName(OutputSettings outputSettings, int index, string objectName)
-    {
-        var result = string.Format(outputSettings.FileName, objectName, index);
-
-        return result;
-    }
+    private static string GetFileName(OutputSettings outputSettings, int index, string objectName) 
+        => string.Format(outputSettings.FileName, objectName, index);
 }

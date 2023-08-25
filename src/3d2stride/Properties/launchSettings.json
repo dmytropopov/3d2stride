@@ -2,7 +2,7 @@
   "profiles": {
     "3d2stride": {
       "commandName": "Project",
-      "commandLineArgs": "-i:d:\\Work\\3d2stride\\test\\data\\plane-unlit-2.obj --stride VT0:HF,UV0:UB -m -a:16"
+      "commandLineArgs": "-i:d:\\Work\\3d2stride\\test\\data\\plane-unlit-2.obj --stride VT0:HF,U0:UB -m -a:8"
     }
   }
 }
