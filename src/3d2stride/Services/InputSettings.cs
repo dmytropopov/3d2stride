@@ -18,7 +18,10 @@ public enum AttributeFormat
     Unknown = 0,
     Float,
     HalfFloat,
-    UnsignedByte
+    NormalizedUnsignedByte,
+    NormalizedSignedByte,
+    UnsignedByte,
+    SignedByte
 }
 
 public enum AttributeType
@@ -52,7 +55,10 @@ public class OutputAttributes
     {
         { AttributeFormat.Float, sizeof(float) },
         { AttributeFormat.HalfFloat, sizeof(float) / 2 },
-        { AttributeFormat.UnsignedByte, sizeof(byte) }
+        { AttributeFormat.NormalizedUnsignedByte, sizeof(byte) },
+        { AttributeFormat.NormalizedSignedByte, sizeof(byte) },
+        { AttributeFormat.UnsignedByte, sizeof(byte) },
+        { AttributeFormat.SignedByte, sizeof(byte) }
     };
 
     public List<Attribute> Attributes { get; private set; } = new();
@@ -88,7 +94,10 @@ public class OutputAttributes
             {
                 "F" => AttributeFormat.Float,
                 "HF" => AttributeFormat.HalfFloat,
+                "NUB" => AttributeFormat.NormalizedUnsignedByte,
+                "NSB" => AttributeFormat.NormalizedSignedByte,
                 "UB" => AttributeFormat.UnsignedByte,
+                "SB" => AttributeFormat.SignedByte,
                 _ => throw new NotImplementedException("Output format not recognized: " + format),
             };
 

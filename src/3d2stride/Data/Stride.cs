@@ -45,8 +45,17 @@ public sealed class Stride : IComparable<Stride>
             case AttributeFormat.HalfFloat:
                 WriteHalfFloat(data, ref bytePtr);
                 break;
+            case AttributeFormat.NormalizedUnsignedByte:
+                WriteNormalizedUnsignedByte(data, ref bytePtr);
+                break;
+            case AttributeFormat.NormalizedSignedByte:
+                WriteNormalizedSignedByte(data, ref bytePtr);
+                break;
             case AttributeFormat.UnsignedByte:
-                WriteSignedByte(data, ref bytePtr);
+                WriteUnsignedByte(data, ref bytePtr);
+                break;
+            case AttributeFormat.SignedByte:
+                WriteUnsignedByte(data, ref bytePtr);
                 break;
         };
     }
@@ -66,9 +75,34 @@ public sealed class Stride : IComparable<Stride>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe void WriteUnsignedByte(float data, ref byte* bytePtr)
+    {
+        // TODO: check range
+        *bytePtr = (byte)(data);
+        bytePtr += sizeof(byte);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private unsafe void WriteSignedByte(float data, ref byte* bytePtr)
     {
+        // TODO: check range
+        *(sbyte*)bytePtr = (sbyte)data;
+        bytePtr += sizeof(byte);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe void WriteNormalizedUnsignedByte(float data, ref byte* bytePtr)
+    {
+        // TODO: check range
         *bytePtr = (byte)(data * 255);
+        bytePtr += sizeof(byte);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe void WriteNormalizedSignedByte(float data, ref byte* bytePtr)
+    {
+        // TODO: check range
+        *(sbyte*)bytePtr = (sbyte)(data * 127);
         bytePtr += sizeof(byte);
     }
 }

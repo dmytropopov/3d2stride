@@ -22,7 +22,7 @@ public sealed class GenerateCliCommand
     public bool MergeObjects { get; set; } = false;
 
     [Option("-a|--align", CommandOptionType.SingleValue, Description = "Output stride alignment. 0 for no alignment.")]
-    public int OutputStrideAlignment { get; } = 0;
+    public int OutputStrideAlignment { get; } = 4;
 
     [Option("-v|--verbosity", CommandOptionType.SingleValue, Description = "Verbosity.")]
     public Verbosity Verbosity { get; } = Verbosity.Normal;
@@ -59,10 +59,10 @@ public sealed class GenerateCliCommand
         };
         _console.WriteLine("Output stride format: " + OutputStrideFormat);
         int strideSize = outputSettings.OutputAttributes.GetStrideSize();
-        if (OutputStrideAlignment != 0 && OutputStrideAlignment < strideSize)
-        {
-            throw new Exception($"Alignment can't be less than stride data size ({strideSize}).");
-        }
+        //if (OutputStrideAlignment != 0 && OutputStrideAlignment < strideSize)
+        //{
+        //    throw new Exception($"Alignment can't be less than stride data size ({strideSize}).");
+        //}
 
         _console.WriteLine("Stride data size: " + strideSize);
         _console.WriteLine("Aligned stride size: " + OutputStrideAlignment);

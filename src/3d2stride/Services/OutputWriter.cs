@@ -33,12 +33,12 @@ public sealed class OutputWriter : IOutputWriter
         }
 
         var sw = Stopwatch.StartNew();
-        var alignmentPadding = outputSettings.Alignment != 0 
-            ? new byte[outputSettings.Alignment - outputSettings.OutputAttributes.GetStrideSize()] 
+        var alignmentPadding = outputSettings.Alignment != 0
+            ? new byte[outputSettings.OutputAttributes.GetStrideSize() % outputSettings.Alignment]
             : new byte[0];
 
         int i = 0;
-        foreach (var optimized in meshes.Select(m => _meshOptimizer.GetOptimized(m)))
+        foreach (var optimized in meshes.Select(_meshOptimizer.GetOptimized))
         {
             var fileName = GetFileName(outputSettings, i++, optimized.Name);
             _console.WriteLine($"Writing object {optimized.Name} to file {fileName}");
@@ -76,6 +76,6 @@ public sealed class OutputWriter : IOutputWriter
         return Task.CompletedTask;
     }
 
-    private static string GetFileName(OutputSettings outputSettings, int index, string objectName) 
+    private static string GetFileName(OutputSettings outputSettings, int index, string objectName)
         => string.Format(outputSettings.FileName, objectName, index);
 }
