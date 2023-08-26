@@ -34,7 +34,9 @@ public sealed class OutputWriter : IOutputWriter
 
         var sw = Stopwatch.StartNew();
         var alignmentPadding = outputSettings.Alignment != 0
-            ? new byte[outputSettings.OutputAttributes.GetStrideSize() % outputSettings.Alignment]
+            ? new byte[outputSettings.OutputAttributes.GetStrideSize() > outputSettings.Alignment
+                ? outputSettings.OutputAttributes.GetStrideSize() % outputSettings.Alignment
+                : outputSettings.Alignment % outputSettings.OutputAttributes.GetStrideSize()]
             : new byte[0];
 
         int i = 0;

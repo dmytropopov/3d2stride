@@ -65,7 +65,7 @@ public sealed class GenerateCliCommand
         //}
 
         _console.WriteLine("Stride data size: " + strideSize);
-        _console.WriteLine("Aligned stride size: " + OutputStrideAlignment);
+        //_console.WriteLine("Aligned stride size: " + OutputStrideAlignment);
 
         if (string.IsNullOrEmpty(outputSettings.FileName))
         {
