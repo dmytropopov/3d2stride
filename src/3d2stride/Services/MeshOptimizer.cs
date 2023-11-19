@@ -1,5 +1,4 @@
-﻿using McMaster.Extensions.CommandLineUtils;
-using StrideGenerator.Data;
+﻿using StrideGenerator.Data;
 using System.Diagnostics;
 
 namespace StrideGenerator.Services;

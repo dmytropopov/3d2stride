@@ -1,4 +1,5 @@
-﻿using McMaster.Extensions.CommandLineUtils;
+﻿/*
+using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
 
@@ -80,3 +81,4 @@ public sealed class GenerateCliCommand
         _globalOptions.Verbosity = Verbosity;
     }
 }
+*/

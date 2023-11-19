@@ -1,30 +1,48 @@
-﻿using McMaster.Extensions.CommandLineUtils;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
 using StrideGenerator.Services;
 using StrideGenerator.Services.Obj;
-using Scrutor;
+using System.CommandLine;
+using Microsoft.Extensions.Configuration;
+using System.CommandLine.Builder;
+using System.CommandLine.Parsing;
 
-return await new HostBuilder()
-    .ConfigureLogging((context, builder) =>
+class Program
+{
+    public static async Task<int> Main(string[] args)
     {
-        builder.AddConsole();
-    })
-    .ConfigureHostConfiguration(configure =>
+        var serviceProvider = BuildServiceProvider();
+        var parser = BuildParser(serviceProvider);
+
+        return await parser.InvokeAsync(args).ConfigureAwait(false);
+    }
+
+    private static Parser BuildParser(ServiceProvider serviceProvider)
     {
-        //configure.
-    })
-    .ConfigureServices((context, services) =>
+        var commandLineBuilder = new CommandLineBuilder(serviceProvider.GetService<GenerateCommand>());
+        return commandLineBuilder.UseDefaults().Build();
+    }
+
+    private static ServiceProvider BuildServiceProvider()
     {
+        var services = new ServiceCollection();
+
+        IConfigurationRoot config = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", optional: true)
+            .Build();
+
+        services.AddSingleton<IConfiguration>(config);
+        services.AddSingleton<GenerateCommand>();
+
         services.AddSingleton<IGenerator, Generator>()
             .AddSingleton<InputReaderFactory>()
             .AddSingleton<IGenerator, Generator>()
             .AddSingleton<IInputReader, ObjReader>()
             .AddSingleton<IOutputWriter, OutputWriter>()
             .AddSingleton<MeshOptimizer>()
-            .AddSingleton(PhysicalConsole.Singleton)
-            .AddSingleton<GlobalOptions>()
-            .Decorate<IConsole, VerbosityConsoleDecorator>();
-    })
-    .RunCommandLineApplicationAsync<GenerateCliCommand>(args);
+            .AddSingleton<StrideGenerator.Services.IConsole, SystemConsole>()
+            .AddSingleton<GlobalOptions>();
+            //.Decorate<StrideGenerator.Services.IConsole, VerbosityConsoleDecorator>();
+
+        return services.BuildServiceProvider();
+    }
+}

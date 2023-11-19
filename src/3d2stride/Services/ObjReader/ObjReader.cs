@@ -1,25 +1,21 @@
 ﻿using csFastFloat;
-using Microsoft.Extensions.Logging;
 using StrideGenerator.Data;
 using System.Diagnostics;
 using System.Globalization;
 using Open.Text;
 using System.Runtime.CompilerServices;
-using McMaster.Extensions.CommandLineUtils;
 
 namespace StrideGenerator.Services.Obj;
 
 public sealed class ObjReader : IInputReader
 {
-    private readonly ILogger<ObjReader> _logger;
     private readonly IConsole _console;
     private readonly List<float[]> vertices = new(65536);
     private readonly List<float[]> normals = new(65536);
     private readonly List<float[]> uvs = new(65536);
 
-    public ObjReader(ILogger<ObjReader> logger, IConsole console)
+    public ObjReader(IConsole console)
     {
-        _logger = logger;
         _console = console;
     }
 

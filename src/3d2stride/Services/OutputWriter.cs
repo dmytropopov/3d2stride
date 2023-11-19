@@ -1,6 +1,4 @@
-﻿using McMaster.Extensions.CommandLineUtils;
-using Microsoft.Extensions.Logging;
-using StrideGenerator.Data;
+﻿using StrideGenerator.Data;
 using System.Diagnostics;
 
 namespace StrideGenerator.Services;
@@ -8,13 +6,11 @@ namespace StrideGenerator.Services;
 public sealed class OutputWriter : IOutputWriter
 {
     private readonly IConsole _console;
-    private readonly ILogger<OutputWriter> _logger;
     private readonly MeshOptimizer _meshOptimizer;
 
-    public OutputWriter(ILogger<OutputWriter> logger, IConsole console, MeshOptimizer meshOptimizer)
+    public OutputWriter(IConsole console, MeshOptimizer meshOptimizer)
     {
         _console = console;
-        _logger = logger;
         _meshOptimizer = meshOptimizer;
     }
 

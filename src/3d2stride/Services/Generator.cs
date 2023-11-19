@@ -1,16 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
-
-namespace StrideGenerator.Services;
+﻿namespace StrideGenerator.Services;
 
 public sealed class Generator : IGenerator
 {
-    private readonly ILogger _logger;
     private readonly InputReaderFactory _inputReaderFactory;
     private readonly IOutputWriter _outputWriter;
 
-    public Generator(ILogger<Generator> logger, InputReaderFactory inputReaderFactory, IOutputWriter outputWriter)
+    public Generator(InputReaderFactory inputReaderFactory, IOutputWriter outputWriter)
     {
-        _logger = logger;
         _inputReaderFactory = inputReaderFactory;
         _outputWriter = outputWriter;
     }
