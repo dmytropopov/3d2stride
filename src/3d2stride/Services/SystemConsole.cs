@@ -1,13 +1,8 @@
 ﻿namespace StrideGenerator.Services;
 
-public class SystemConsole : IConsole
+public class SystemConsole(GlobalOptions globalOptions) : IConsole
 {
-    private readonly GlobalOptions _globalOptions;
-
-    public SystemConsole(GlobalOptions globalOptions)
-    {
-        _globalOptions = globalOptions;
-    }
+    private readonly GlobalOptions _globalOptions = globalOptions;
 
     public void WriteLine(string line)
     {

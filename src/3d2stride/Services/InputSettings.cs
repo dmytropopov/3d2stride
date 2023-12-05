@@ -29,36 +29,39 @@ public enum AttributeFormat
 public enum AttributeType
 {
     Unknown = 0,
-    Vertex,
-    Normal,
-    TextureCoords,
+    VertexX,
+    VertexY,
+    VertexZ,
+    NormalX,
+    NormalY,
+    NormalZ,
     TextureCoordU,
     TextureCoordV,
     Empty
 }
 
-public readonly record struct Attribute(AttributeInfo AttributeInfo, int Index, AttributeFormat Format, int totalSize);
+public readonly record struct StridePiece(AttributeFormat Format, int TotalSize, int InputIndex, int Offset, AttributeType[] AttributeTypes);
 
-public readonly record struct AttributeInfo(AttributeType AttributeType, int Size, string HelpText);
+public readonly record struct AttributeInfo(AttributeType AttributeType, string[]? TransformsTo, string HelpText);
 
 public readonly record struct InputAttributes(string[] Attributes);
 
-public class OutputAttributes
+public partial class OutputAttributes
 {
     public static readonly Dictionary<string, AttributeInfo> AttributesInfos = new()
     {
-        { "VT", new(AttributeType.Vertex, 3, "Shorthand for three vertex positions X,Y,Z. Does not work with bit-packed formats, use separate VTX, VTY, VTZ instead.") },
-        { "VTX", new(AttributeType.Vertex, 1, "Vertex position X.") },
-        { "VTY", new(AttributeType.Vertex, 1, "Vertex position Y.") },
-        { "VTZ", new(AttributeType.Vertex, 1, "Vertex position Z.") },
-        { "N", new(AttributeType.Normal, 3, "Shorthand for three normal values X,Y,Z. Does not work with bit-packed formats, use separate NX, NY, NZ instead.") },
-        { "NX", new(AttributeType.Normal, 1, "Normal X value") },
-        { "NY", new(AttributeType.Normal, 1, "Normal Y value") },
-        { "NZ", new(AttributeType.Normal, 1, "Normal Z value") },
-        { "UV", new(AttributeType.TextureCoords, 2, "Shorthand for two texture coordinates U, V. Does not work with bit-packed formats, use separate U and V instead.") },
-        { "U", new(AttributeType.TextureCoordU, 1, "Texture coordinate U") },
-        { "V", new(AttributeType.TextureCoordV, 1, "Texture coordinate V") },
-        { "E", new(AttributeType.Empty, 0, "Leave empty") }
+        { "VT", new(AttributeType.Unknown, [ "VTX", "VTY", "VTZ" ], "Shorthand for three vertex positions X,Y,Z. Does not work with bit-packed formats, use separate VTX, VTY, VTZ instead.") },
+        { "VTX", new(AttributeType.VertexX, null, "Vertex position X.") },
+        { "VTY", new(AttributeType.VertexY, null, "Vertex position Y.") },
+        { "VTZ", new(AttributeType.VertexZ, null, "Vertex position Z.") },
+        { "N", new(AttributeType.Unknown, [ "NX", "NY", "NZ" ], "Shorthand for three normal values X,Y,Z. Does not work with bit-packed formats, use separate NX, NY, NZ instead.") },
+        { "NX", new(AttributeType.NormalX, null, "Normal X value") },
+        { "NY", new(AttributeType.NormalY, null, "Normal Y value") },
+        { "NZ", new(AttributeType.NormalZ, null, "Normal Z value") },
+        { "UV", new(AttributeType.Unknown, [ "U", "V" ], "Shorthand for two texture coordinates U, V. Does not work with bit-packed formats, use separate U and V instead.") },
+        { "U", new(AttributeType.TextureCoordU, null, "Texture coordinate U") },
+        { "V", new(AttributeType.TextureCoordV, null, "Texture coordinate V") },
+        { "E", new(AttributeType.Empty, null, "Leave empty") }
     };
 
     public static readonly Dictionary<AttributeFormat, int> FormatSizes = new()
@@ -73,7 +76,7 @@ public class OutputAttributes
         { AttributeFormat.SI2101010R, 4 }
     };
 
-    public static readonly Dictionary<string, (AttributeFormat AttributeFormat, string HelpText)> AttributeFormats = new ()
+    public static readonly Dictionary<string, (AttributeFormat AttributeFormat, string HelpText)> AttributeFormats = new()
     {
         { "F", new(AttributeFormat.Float, $"Float") },
         { "HF", new( AttributeFormat.HalfFloat, "Half-Float") },
@@ -85,12 +88,16 @@ public class OutputAttributes
         { "SI2101010R", new( AttributeFormat.SI2101010R, "GL_INT_2_10_10_10_REV. Not implemented yet." ) }
     };
 
-    public List<Attribute> Attributes { get; private set; } = new();
+    public List<StridePiece> StrideMap { get; private set; } = [];
+
+    [GeneratedRegex("([a-zA-Z]*)(\\d*)")]
+    private static partial Regex AttributeRegex();
 
     public static OutputAttributes Parse(string input)
     {
         input = input.ToUpperInvariant();
         var result = new OutputAttributes();
+        int offset = 0;
 
         foreach (var part in input.Split(','))
         {
@@ -98,7 +105,7 @@ public class OutputAttributes
             var attribute = subparts[0].ToUpperInvariant();
             var format = subparts[1].ToUpperInvariant();
 
-            var matchGroups = Regex.Matches(attribute, "([a-zA-Z]*)(\\d*)")[0].Groups;
+            var matchGroups = AttributeRegex().Matches(attribute)[0].Groups;
             AttributeInfo attributeInfo;
             if (matchGroups.Count == 3)
             {
@@ -119,14 +126,30 @@ public class OutputAttributes
                 throw new NotImplementedException("Output format not recognized: " + format);
             }
 
-            var sizeInBytes = FormatSizes[attributeFormat.AttributeFormat] * attributeInfo.Size;
-            result.Attributes.Add(new(attributeInfo, index, attributeFormat.AttributeFormat, sizeInBytes));
+            if (attributeInfo.TransformsTo == null)
+            {
+                AddAttribute(result, attributeInfo, index, attributeFormat, ref offset);
+            }
+            else
+            {
+                foreach (var tranform in attributeInfo.TransformsTo)
+                {
+                    AddAttribute(result, AttributesInfos[tranform], index, attributeFormat, ref offset);
+                }
+            }
         }
 
         return result;
     }
 
-    public int GetStrideSize() => Attributes.Sum(x => x.totalSize);
+    private static void AddAttribute(OutputAttributes result, AttributeInfo attributeInfo, int inputIndex, (AttributeFormat AttributeFormat, string HelpText) attributeFormat, ref int offset)
+    {
+        var sizeInBytes = FormatSizes[attributeFormat.AttributeFormat];
+        result.StrideMap.Add(new(attributeFormat.AttributeFormat, sizeInBytes, inputIndex, offset, [attributeInfo.AttributeType /*bit-packed attribute formats not parsed yet*/ ]));
+        offset += sizeInBytes;
+    }
+
+    public int GetStrideSize() => StrideMap.Sum(x => x.TotalSize);
 }
 
 public readonly record struct InputSettings(string FileName, string FileFormat, InputAttributes InputAttributes, Verbosity Verbosity);

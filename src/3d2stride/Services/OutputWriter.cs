@@ -3,16 +3,10 @@ using System.Diagnostics;
 
 namespace StrideGenerator.Services;
 
-public sealed class OutputWriter : IOutputWriter
+public sealed class OutputWriter(IConsole console, MeshOptimizer meshOptimizer) : IOutputWriter
 {
-    private readonly IConsole _console;
-    private readonly MeshOptimizer _meshOptimizer;
-
-    public OutputWriter(IConsole console, MeshOptimizer meshOptimizer)
-    {
-        _console = console;
-        _meshOptimizer = meshOptimizer;
-    }
+    private readonly IConsole _console = console;
+    private readonly MeshOptimizer _meshOptimizer = meshOptimizer;
 
     public Task Write(IEnumerable<MeshObject> meshes, IEnumerable<InputSettings> inputs, OutputSettings outputSettings)
     {
@@ -33,12 +27,12 @@ public sealed class OutputWriter : IOutputWriter
             ? new byte[outputSettings.OutputAttributes.GetStrideSize() > outputSettings.Alignment
                 ? outputSettings.OutputAttributes.GetStrideSize() % outputSettings.Alignment
                 : outputSettings.Alignment % outputSettings.OutputAttributes.GetStrideSize()]
-            : new byte[0];
+            : [];
 
         int i = 0;
         foreach (var optimized in meshes.Select(_meshOptimizer.GetOptimized))
         {
-            var fileName = GetFileName(outputSettings, i++, optimized.Name);
+            var fileName = GetFileName(outputSettings, i++, optimized.Name ?? "");
             _console.WriteLine($"Writing object {optimized.Name} to file {fileName}");
 
             using var stridesStream = File.Open(Path.ChangeExtension(fileName + "-strides", "bin"), FileMode.Create);

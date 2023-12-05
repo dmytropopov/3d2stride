@@ -1,4 +1,4 @@
-﻿using StrideGenerator.Services;
+﻿namespace StrideGenerator.Services;
 
 public interface IGenerator
 {

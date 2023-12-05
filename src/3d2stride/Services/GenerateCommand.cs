@@ -39,7 +39,7 @@ public class GenerateCommand : RootCommand
             Description = @$"Output stride format, separated by comma:
   <attribute><input-index>:<format>.
 Bit-packed formats can have multiple attributes inside, separated by '+' sign:
-  <attribute><input-index>[+<attribute><input-index>]..[+<attribute><input-index>]:<format>.
+  <attribute><input-index>[+<attribute><input-index>...+<attribute><input-index>]:<format>.
 Example: E0+VTX0+VTY0+VTZ0:SI2101010,UV0:F
 Supported attributes:
 {supportedAttributesHelpText}
@@ -97,7 +97,7 @@ Supported formats:
 
             _globalOptions.Verbosity = verbosityOptionValue;
 
-            var inputSettings = inputOptionValue.Select(s => new InputSettings
+            var inputSettings = inputOptionValue!.Select(s => new InputSettings
             {
                 FileName = s,
                 FileFormat = Constants.FileFormats.Obj
@@ -105,8 +105,8 @@ Supported formats:
 
             var outputSettings = new OutputSettings()
             {
-                FileName = outputOptionValue,
-                OutputAttributes = OutputAttributes.Parse(strideOptionValue),
+                FileName = outputOptionValue!,
+                OutputAttributes = OutputAttributes.Parse(strideOptionValue!),
                 MergeObjects = mergeOptionValue,
                 Alignment = alignOptionValue
             };
@@ -117,8 +117,8 @@ Supported formats:
             //    throw new Exception($"Alignment can't be less than stride data size ({strideSize}).");
             //}
 
-            _console.WriteLine("Stride data size: " + strideSize);
-            //_console.WriteLine("Aligned stride size: " + OutputStrideAlignment);
+            var strideFormat = string.Join(',', outputSettings.OutputAttributes.StrideMap.Select(sp => $"{string.Join('+', sp.AttributeTypes.Select(at => OutputAttributes.AttributesInfos.Single(ai => ai.Value.AttributeType == at).Key))}{sp.InputIndex}:{OutputAttributes.AttributeFormats.Single(af => af.Value.AttributeFormat == sp.Format).Key}"));
+            _console.WriteLine($"Stride: {strideSize} byte(s) {strideFormat}");
 
             if (string.IsNullOrEmpty(outputSettings.FileName))
             {

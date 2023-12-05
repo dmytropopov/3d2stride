@@ -7,24 +7,19 @@ using System.Runtime.CompilerServices;
 
 namespace StrideGenerator.Services.Obj;
 
-public sealed class ObjReader : IInputReader
+public sealed class ObjReader(IConsole console) : IInputReader
 {
-    private readonly IConsole _console;
+    private readonly IConsole _console = console;
     private readonly List<float[]> vertices = new(65536);
     private readonly List<float[]> normals = new(65536);
     private readonly List<float[]> uvs = new(65536);
-
-    public ObjReader(IConsole console)
-    {
-        _console = console;
-    }
-
     private bool _readNormals;
     private bool _readVertices;
     private bool _readUVs;
     private int _attributesCount;
+    private bool _meshesExist;
 
-    public Task<IEnumerable<MeshObject>> ReadInput(InputSettings inputData, OutputSettings outputSettings)
+    public Task ReadInput(List<MeshObject> meshes, InputSettings inputData, List<StridePiece> stridePieces, bool mergeObjects, int strideSize)
     {
         var commentSpan = "#".AsSpan();
         var vSpan = "v".AsSpan();
@@ -39,26 +34,26 @@ public sealed class ObjReader : IInputReader
         var FSpan = "F".AsSpan();
         var objectSpan = "object".AsSpan();
 
-        int strideSize = outputSettings.OutputAttributes.GetStrideSize();
-        _readNormals = outputSettings.OutputAttributes.Attributes.Any(x => x.AttributeInfo.AttributeType == AttributeType.Normal);
-        _readVertices = outputSettings.OutputAttributes.Attributes.Any(x => x.AttributeInfo.AttributeType == AttributeType.Vertex);
-        _readUVs = outputSettings.OutputAttributes.Attributes.Any(x => x.AttributeInfo.AttributeType == AttributeType.TextureCoords
-            || x.AttributeInfo.AttributeType == AttributeType.TextureCoordU
-            || x.AttributeInfo.AttributeType == AttributeType.TextureCoordV);
-        _attributesCount = outputSettings.OutputAttributes.Attributes.Count;
+        var allAttributes = stridePieces.SelectMany(s => s.AttributeTypes, (stridePiece, attributeType) => new { stridePiece, attributeType }).ToArray();
+        _readVertices = allAttributes.Any(x => x.attributeType == AttributeType.VertexX || x.attributeType == AttributeType.VertexY || x.attributeType == AttributeType.VertexZ);
+        _readUVs = allAttributes.Any(x => x.attributeType == AttributeType.TextureCoordU || x.attributeType == AttributeType.TextureCoordV);
+        _readNormals = allAttributes.Any(x => x.attributeType == AttributeType.NormalX || x.attributeType == AttributeType.NormalY || x.attributeType == AttributeType.NormalZ);
+        _attributesCount = allAttributes.Length;
+        
+        _meshesExist = meshes.Count > 0;
 
-        if (outputSettings.OutputAttributes.Attributes.Any(x => x.Index > 0))
-        {
-            throw new Exception("Reading attributes with index > 0 is not supported (yet).");
-        }
+        //if (strideAttributes.Any(x => x.Index > 0))
+        //{
+        //    throw new Exception("Reading attributes with index > 0 is not supported (yet).");
+        //}
 
         Stopwatch sw = new();
         sw.Start();
-        List<MeshObject> objectsList = new();
 
         var lineNumber = 0;
-        var currentObject = new MeshObject();
+        var currentObject = meshes.FirstOrDefault() ?? new MeshObject();
         string? currentMaterialName = null;
+        int currentFaceIndex = 0;
 
         foreach (var line in File.ReadLines(inputData.FileName))
         {
@@ -68,7 +63,7 @@ public sealed class ObjReader : IInputReader
             {
                 continue;
             }
-            lineSpan = lineSpan.Slice(lineNextIndex);
+            lineSpan = lineSpan[lineNextIndex..];
             ReadOnlySpan<char> wordSpan;
 
             if (verb.SequenceEqual(vSpan) || verb.SequenceEqual(VSpan))
@@ -119,91 +114,109 @@ public sealed class ObjReader : IInputReader
             }
             else if (verb.SequenceEqual(fSpan) || verb.SequenceEqual(FSpan))
             {
-                var strides = new Stride[3];
+                Stride[] strides;
+
+                if (!_meshesExist)
+                {
+                    strides = [new(strideSize), new(strideSize), new(strideSize)];
+
+                    var face = new Face()
+                    {
+                        MaterialName = currentMaterialName,
+                        Strides = strides
+                    };
+
+                    var i = 0;
+                    foreach (var s in strides)
+                    {
+                        s.Face = face;
+                        s.OriginalIndexInFace = Array.IndexOf(face.Strides, s);
+                        s.OriginalIndex = currentObject.Strides.Count + i++;
+                    }
+                    currentObject.Strides.AddRange(strides);
+                    currentObject.Faces.Add(face);
+                }
+                else
+                {
+                    strides = currentObject.Faces[currentFaceIndex].Strides;
+                    currentFaceIndex++;
+                }
+
                 for (var si = 0; si < 3; si++)
                 {
                     lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
                     var faceSpan = wordSpan.FirstSplit('/', out var nextIndex);
                     var vertexIndex = int.Parse(faceSpan, NumberStyles.None, CultureInfo.InvariantCulture) - 1;
 
-                    wordSpan = wordSpan.Slice(nextIndex);
+                    wordSpan = wordSpan[nextIndex..];
                     faceSpan = wordSpan.FirstSplit('/', out nextIndex);
                     var uvIndex = int.Parse(faceSpan, NumberStyles.None, CultureInfo.InvariantCulture) - 1;
 
-                    wordSpan = wordSpan.Slice(nextIndex);
+                    wordSpan = wordSpan[nextIndex..];
                     var normalIndex = int.Parse(wordSpan, NumberStyles.None, CultureInfo.InvariantCulture) - 1;
 
-                    var stride = new Stride(strideSize);
-                    strides[si] = stride;
+                    var stride = strides[si];
                     unsafe
                     {
                         fixed (void* ptr = &stride.Data[0])
                         {
-                            byte* bytePtr = (byte*)ptr;
                             for (int attributeIndex = 0; attributeIndex < _attributesCount; attributeIndex++)
                             {
-                                if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.Vertex)
+                                byte* bytePtr = (byte*)ptr + allAttributes[attributeIndex].stridePiece.Offset;
+
+                                if (allAttributes[attributeIndex].attributeType == AttributeType.VertexX)
                                 {
-                                    stride.WriteInFormat(vertices[vertexIndex][0], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
-                                    stride.WriteInFormat(vertices[vertexIndex][1], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
-                                    stride.WriteInFormat(vertices[vertexIndex][2], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
+                                    stride.WriteInFormat(vertices[vertexIndex][0], ref bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
-                                if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.TextureCoords)
+                                if (allAttributes[attributeIndex].attributeType == AttributeType.VertexY)
                                 {
-                                    stride.WriteInFormat(uvs[uvIndex][0], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
-                                    stride.WriteInFormat(uvs[uvIndex][1], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
+                                    stride.WriteInFormat(vertices[vertexIndex][1], ref bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
-                                if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.TextureCoordU)
+                                if (allAttributes[attributeIndex].attributeType == AttributeType.VertexZ)
                                 {
-                                    stride.WriteInFormat(uvs[uvIndex][0], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
+                                    stride.WriteInFormat(vertices[vertexIndex][2], ref bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
-                                if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.TextureCoordV)
+                                if (allAttributes[attributeIndex].attributeType == AttributeType.TextureCoordU)
                                 {
-                                    stride.WriteInFormat(uvs[uvIndex][1], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
+                                    stride.WriteInFormat(uvs[uvIndex][0], ref bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
-                                if (outputSettings.OutputAttributes.Attributes[attributeIndex].AttributeInfo.AttributeType == AttributeType.Normal)
+                                if (allAttributes[attributeIndex].attributeType == AttributeType.TextureCoordV)
                                 {
-                                    stride.WriteInFormat(normals[normalIndex][0], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
-                                    stride.WriteInFormat(normals[normalIndex][1], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
-                                    stride.WriteInFormat(normals[normalIndex][2], ref bytePtr, outputSettings.OutputAttributes.Attributes[attributeIndex].Format);
+                                    stride.WriteInFormat(uvs[uvIndex][1], ref bytePtr, allAttributes[attributeIndex].stridePiece.Format);
+                                }
+                                if (allAttributes[attributeIndex].attributeType == AttributeType.NormalX)
+                                {
+                                    stride.WriteInFormat(normals[normalIndex][0], ref bytePtr, allAttributes[attributeIndex].stridePiece.Format);
+                                }
+                                if (allAttributes[attributeIndex].attributeType == AttributeType.NormalY)
+                                {
+                                    stride.WriteInFormat(normals[normalIndex][1], ref bytePtr, allAttributes[attributeIndex].stridePiece.Format);
+                                }
+                                if (allAttributes[attributeIndex].attributeType == AttributeType.NormalZ)
+                                {
+                                    stride.WriteInFormat(normals[normalIndex][2], ref bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
                             }
                         }
                     }
                 }
-
-                var face = new Face()
-                {
-                    MaterialName = currentMaterialName,
-                    Strides = strides
-                };
-                var i = 0;
-                foreach (var s in strides)
-                {
-                    s.Face = face;
-                    s.OriginalIndexInFace = Array.IndexOf(face.Strides, s);
-                    s.OriginalIndex = currentObject.Strides.Count + i++;
-                }
-
-                currentObject.Strides.AddRange(strides);
-                currentObject.Faces.Add(face);
             }
             else if (verb.SequenceEqual(oSpan) || verb.SequenceEqual(OSpan))
             {
-                if (!outputSettings.MergeObjects) // ignore objects when in merge mode
+                if (!mergeObjects) // ignore objects when in merge mode
                 {
                     lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
                     currentObject = new MeshObject()
                     {
                         Name = wordSpan.ToString()
                     };
-                    objectsList.Add(currentObject);
+                    meshes.Add(currentObject);
                     currentMaterialName = null;
                 }
             }
             else if (verb.SequenceEqual(commentSpan))
             {
-                if (!outputSettings.MergeObjects) // ignore objects when in merge mode
+                if (!mergeObjects) // ignore objects when in merge mode
                 {
                     lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
                     if (wordSpan.SequenceEqual(objectSpan))
@@ -215,7 +228,7 @@ public sealed class ObjReader : IInputReader
                             {
                                 Name = wordSpan.ToString()
                             };
-                            objectsList.Add(currentObject);
+                            meshes.Add(currentObject);
                             currentMaterialName = null;
                             _console.WriteLine($"Reading object {currentObject.Name}");
                         }
@@ -241,15 +254,14 @@ public sealed class ObjReader : IInputReader
         }
 
         // Obj file had no objects defined - add current object
-        if (objectsList.Count == 0)
+        if (meshes.Count == 0)
         {
-            objectsList.Add(currentObject);
+            meshes.Add(currentObject);
         }
 
         sw.Stop();
         _console.WriteLine($"Read time: {sw.Elapsed}");
-
-        return Task.FromResult(objectsList.AsEnumerable());
+        return Task.CompletedTask;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -265,7 +277,7 @@ public sealed class ObjReader : IInputReader
             }
             else
             {
-                lineSpan = lineSpan.Slice(lineNextIndex);
+                lineSpan = lineSpan[lineNextIndex..];
             }
         } while (wordSpan.Length == 0);
         return lineSpan;

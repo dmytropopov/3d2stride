@@ -8,9 +8,9 @@ public sealed class StrideOriginalIndexComparer : IComparer<Stride>
     public int Compare(Stride? x, Stride? y) => x.OriginalIndex.CompareTo(y.OriginalIndex);
 }
 
-public sealed class Stride : IComparable<Stride>
+public sealed class Stride(int size) : IComparable<Stride>
 {
-    public byte[] Data { get; }
+    public byte[] Data { get; } = new byte[size];
 
     public Face Face { get; set; }
     public int OriginalIndexInFace { get; set; }
@@ -23,11 +23,6 @@ public sealed class Stride : IComparable<Stride>
     public Dictionary<string, double[]> ExtraAttributes;
 
     public override int GetHashCode() => 0;
-
-    public Stride(int size)
-    {
-        Data = new byte[size];
-    }
 
     public int CompareTo(Stride other)
     {

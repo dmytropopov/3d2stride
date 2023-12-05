@@ -3,32 +3,27 @@ using System.Diagnostics;
 
 namespace StrideGenerator.Services;
 
-public sealed class MeshOptimizer
+public sealed class MeshOptimizer(IConsole console)
 {
-    private readonly IConsole _console;
-
-    public MeshOptimizer(IConsole console)
-    {
-        _console = console;
-    }
+    private readonly IConsole _console = console;
 
     public MeshObject GetOptimized(MeshObject meshObject)
     {
         _console.WriteLine($"Mesh: '{meshObject.Name}'");
-        _console.WriteLine($"Stride count: {meshObject.Strides.Count()}");
-        _console.WriteLine($"Face count: {meshObject.Faces.Count()}");
+        _console.WriteLine($"Stride count: {meshObject.Strides.Count}");
+        _console.WriteLine($"Face count: {meshObject.Faces.Count}");
 
         Stopwatch sw = new();
         sw.Start();
 
-        SortedList<Stride, Stride> sorted = new();
+        SortedList<Stride, Stride> sorted = [];
         SortedList<Stride, Stride> resorted = new(new StrideOriginalIndexComparer());
         foreach (var stride in meshObject.Strides)
         {
             var exists = sorted.TryGetValue(stride, out var existingSorted);
             if (exists)
             {
-                stride.Face.Strides[stride.OriginalIndexInFace] = existingSorted;
+                stride.Face.Strides[stride.OriginalIndexInFace] = existingSorted!;
             }
             else
             {
@@ -51,7 +46,7 @@ public sealed class MeshOptimizer
         };
 
         sw.Stop();
-        _console.WriteLine($"Sorted stride count: {sorted.Count()}");
+        _console.WriteLine($"Sorted stride count: {sorted.Count}");
         _console.WriteLine($"Sort Time: {sw.Elapsed}");
 
         return optimizedMesh;
