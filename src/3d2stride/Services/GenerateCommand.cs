@@ -11,6 +11,9 @@ public class GenerateCommand : RootCommand
     public GenerateCommand(IGenerator generator, IConsole console, GlobalOptions globalOptions)
         : base("Generate output stride/indices files")
     {
+        var supportedAttributesHelpText = String.Join(Environment.NewLine, OutputAttributes.AttributesInfos.Select(s => $"  - {s.Key}: {s.Value.HelpText}"));
+        var supportedFormatsHelpText = String.Join(Environment.NewLine, OutputAttributes.AttributeFormats.Select(s => $"  - {s.Key}: {s.Value.HelpText}, {OutputAttributes.FormatSizes[s.Value.AttributeFormat]} byte(s)."));
+
         _globalOptions = globalOptions;
         _generator = generator;
         _console = console;
@@ -33,11 +36,20 @@ public class GenerateCommand : RootCommand
 
         var strideOption = new Option<string>("--stride")
         {
-            Description = "Output stride format.",
+            Description = @$"Output stride format, separated by comma:
+  <attribute><input-index>:<format>.
+Bit-packed formats can have multiple attributes inside, separated by '+' sign:
+  <attribute><input-index>[+<attribute><input-index>]..[+<attribute><input-index>]:<format>.
+Example: E0+VTX0+VTY0+VTZ0:SI2101010,UV0:F
+Supported attributes:
+{supportedAttributesHelpText}
+<input-index> is zero-based.
+Supported formats:
+{supportedFormatsHelpText}
+",
             IsRequired = true,
             AllowMultipleArgumentsPerToken = true,
         };
-        strideOption.SetDefaultValue("Vt0:F,UV0:F");
         strideOption.AddAlias("-s");
 
         var alignOption = new Option<int>("--align")

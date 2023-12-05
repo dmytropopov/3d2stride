@@ -20,6 +20,7 @@ public sealed class ObjReader : IInputReader
     }
 
     private bool _readNormals;
+    private bool _readVertices;
     private bool _readUVs;
     private int _attributesCount;
 
@@ -40,6 +41,7 @@ public sealed class ObjReader : IInputReader
 
         int strideSize = outputSettings.OutputAttributes.GetStrideSize();
         _readNormals = outputSettings.OutputAttributes.Attributes.Any(x => x.AttributeInfo.AttributeType == AttributeType.Normal);
+        _readVertices = outputSettings.OutputAttributes.Attributes.Any(x => x.AttributeInfo.AttributeType == AttributeType.Vertex);
         _readUVs = outputSettings.OutputAttributes.Attributes.Any(x => x.AttributeInfo.AttributeType == AttributeType.TextureCoords
             || x.AttributeInfo.AttributeType == AttributeType.TextureCoordU
             || x.AttributeInfo.AttributeType == AttributeType.TextureCoordV);
@@ -71,13 +73,16 @@ public sealed class ObjReader : IInputReader
 
             if (verb.SequenceEqual(vSpan) || verb.SequenceEqual(VSpan))
             {
-                var arr = new float[3];
-                for (var i = 0; i < 3; i++)
+                if (_readVertices)
                 {
-                    lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
-                    arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
+                    var arr = new float[3];
+                    for (var i = 0; i < 3; i++)
+                    {
+                        lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
+                        arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
+                    }
+                    vertices.Add(arr);
                 }
-                vertices.Add(arr);
             }
             else if (verb.SequenceEqual(vnSpan) || verb.SequenceEqual(VNSpan))
             {
