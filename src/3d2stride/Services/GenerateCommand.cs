@@ -110,12 +110,7 @@ Supported formats:
                 MergeObjects = mergeOptionValue,
                 Alignment = alignOptionValue
             };
-            _console.WriteLine("Output stride format: " + strideOptionValue);
             int strideSize = outputSettings.OutputAttributes.GetStrideSize();
-            //if (OutputStrideAlignment != 0 && OutputStrideAlignment < strideSize)
-            //{
-            //    throw new Exception($"Alignment can't be less than stride data size ({strideSize}).");
-            //}
 
             var strideFormat = string.Join(',', outputSettings.OutputAttributes.StrideMap.Select(sp => $"{string.Join('+', sp.AttributeTypes.Select(at => OutputAttributes.AttributesInfos.Single(ai => ai.Value.AttributeType == at).Key))}{sp.InputIndex}:{OutputAttributes.AttributeFormats.Single(af => af.Value.AttributeFormat == sp.Format).Key}"));
             _console.WriteLine($"Stride: {strideSize} byte(s) {strideFormat}");

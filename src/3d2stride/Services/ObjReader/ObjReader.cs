@@ -53,7 +53,7 @@ public sealed class ObjReader(IConsole console) : IInputReader
         var lineNumber = 0;
         var currentObject = meshes.FirstOrDefault() ?? new MeshObject();
         string? currentMaterialName = null;
-        int currentFaceIndex = 0;
+        int currentFaceIndex = 0; // TODO: check for identical face count in secondary inputs
 
         foreach (var line in File.ReadLines(inputData.FileName))
         {
