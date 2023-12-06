@@ -5,6 +5,7 @@ using System.CommandLine;
 using Microsoft.Extensions.Configuration;
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
+using StrideGenerator.Cli;
 
 class Program
 {
@@ -41,7 +42,6 @@ class Program
             .AddSingleton<MeshOptimizer>()
             .AddSingleton<StrideGenerator.Services.IConsole, SystemConsole>()
             .AddSingleton<GlobalOptions>();
-            //.Decorate<StrideGenerator.Services.IConsole, VerbosityConsoleDecorator>();
 
         return services.BuildServiceProvider();
     }

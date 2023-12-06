@@ -24,9 +24,9 @@ public sealed class OutputWriter(IConsole console, MeshOptimizer meshOptimizer) 
 
         var sw = Stopwatch.StartNew();
         var alignmentPadding = outputSettings.Alignment != 0
-            ? new byte[outputSettings.OutputAttributes.GetStrideSize() > outputSettings.Alignment
-                ? outputSettings.OutputAttributes.GetStrideSize() % outputSettings.Alignment
-                : outputSettings.Alignment % outputSettings.OutputAttributes.GetStrideSize()]
+            ? new byte[outputSettings.GetStrideSize() > outputSettings.Alignment
+                ? outputSettings.GetStrideSize() % outputSettings.Alignment
+                : outputSettings.Alignment % outputSettings.GetStrideSize()]
             : [];
 
         int i = 0;

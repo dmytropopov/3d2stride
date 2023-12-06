@@ -39,13 +39,8 @@ public sealed class ObjReader(IConsole console) : IInputReader
         _readUVs = allAttributes.Any(x => x.attributeType == AttributeType.TextureCoordU || x.attributeType == AttributeType.TextureCoordV);
         _readNormals = allAttributes.Any(x => x.attributeType == AttributeType.NormalX || x.attributeType == AttributeType.NormalY || x.attributeType == AttributeType.NormalZ);
         _attributesCount = allAttributes.Length;
-        
-        _meshesExist = meshes.Count > 0;
 
-        //if (strideAttributes.Any(x => x.Index > 0))
-        //{
-        //    throw new Exception("Reading attributes with index > 0 is not supported (yet).");
-        //}
+        _meshesExist = meshes.Count > 0;
 
         Stopwatch sw = new();
         sw.Start();
@@ -66,51 +61,42 @@ public sealed class ObjReader(IConsole console) : IInputReader
             lineSpan = lineSpan[lineNextIndex..];
             ReadOnlySpan<char> wordSpan;
 
-            if (verb.SequenceEqual(vSpan) || verb.SequenceEqual(VSpan))
+            if (_readVertices && (verb.SequenceEqual(vSpan) || verb.SequenceEqual(VSpan)))
             {
-                if (_readVertices)
+                var arr = new float[3];
+                for (var i = 0; i < 3; i++)
                 {
-                    var arr = new float[3];
-                    for (var i = 0; i < 3; i++)
+                    lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
+                    arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
+                }
+                vertices.Add(arr);
+            }
+            else if (_readNormals && (verb.SequenceEqual(vnSpan) || verb.SequenceEqual(VNSpan)))
+            {
+                var arr = new float[3];
+                for (var i = 0; i < 3; i++)
+                {
+                    lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
+                    arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
+                }
+                normals.Add(arr);
+            }
+            else if (_readUVs && (verb.SequenceEqual(vtSpan) || verb.SequenceEqual(VTSpan)))
+            {
+                var arr = new float[2];
+                for (var i = 0; i < 2; i++)
+                {
+                    lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
+                    if (i == 0)
                     {
-                        lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
                         arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
                     }
-                    vertices.Add(arr);
-                }
-            }
-            else if (verb.SequenceEqual(vnSpan) || verb.SequenceEqual(VNSpan))
-            {
-                if (_readNormals)
-                {
-                    var arr = new float[3];
-                    for (var i = 0; i < 3; i++)
+                    else if (i == 1)
                     {
-                        lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
-                        arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
+                        arr[i] = 1.0f - (float)FastDoubleParser.ParseDouble(wordSpan);
                     }
-                    normals.Add(arr);
                 }
-            }
-            else if (verb.SequenceEqual(vtSpan) || verb.SequenceEqual(VTSpan))
-            {
-                if (_readUVs)
-                {
-                    var arr = new float[2];
-                    for (var i = 0; i < 2; i++)
-                    {
-                        lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
-                        if (i == 0)
-                        {
-                            arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
-                        }
-                        else if (i == 1)
-                        {
-                            arr[i] = 1.0f - (float)FastDoubleParser.ParseDouble(wordSpan);
-                        }
-                    }
-                    uvs.Add(arr);
-                }
+                uvs.Add(arr);
             }
             else if (verb.SequenceEqual(fSpan) || verb.SequenceEqual(FSpan))
             {
@@ -166,35 +152,35 @@ public sealed class ObjReader(IConsole console) : IInputReader
 
                                 if (allAttributes[attributeIndex].attributeType == AttributeType.VertexX)
                                 {
-                                    stride.WriteInFormat(vertices[vertexIndex][0], ref bytePtr, allAttributes[attributeIndex].stridePiece.Format);
+                                    stride.WriteInFormat(vertices[vertexIndex][0], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
                                 if (allAttributes[attributeIndex].attributeType == AttributeType.VertexY)
                                 {
-                                    stride.WriteInFormat(vertices[vertexIndex][1], ref bytePtr, allAttributes[attributeIndex].stridePiece.Format);
+                                    stride.WriteInFormat(vertices[vertexIndex][1], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
                                 if (allAttributes[attributeIndex].attributeType == AttributeType.VertexZ)
                                 {
-                                    stride.WriteInFormat(vertices[vertexIndex][2], ref bytePtr, allAttributes[attributeIndex].stridePiece.Format);
+                                    stride.WriteInFormat(vertices[vertexIndex][2], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
                                 if (allAttributes[attributeIndex].attributeType == AttributeType.TextureCoordU)
                                 {
-                                    stride.WriteInFormat(uvs[uvIndex][0], ref bytePtr, allAttributes[attributeIndex].stridePiece.Format);
+                                    stride.WriteInFormat(uvs[uvIndex][0], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
                                 if (allAttributes[attributeIndex].attributeType == AttributeType.TextureCoordV)
                                 {
-                                    stride.WriteInFormat(uvs[uvIndex][1], ref bytePtr, allAttributes[attributeIndex].stridePiece.Format);
+                                    stride.WriteInFormat(uvs[uvIndex][1], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
                                 if (allAttributes[attributeIndex].attributeType == AttributeType.NormalX)
                                 {
-                                    stride.WriteInFormat(normals[normalIndex][0], ref bytePtr, allAttributes[attributeIndex].stridePiece.Format);
+                                    stride.WriteInFormat(normals[normalIndex][0], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
                                 if (allAttributes[attributeIndex].attributeType == AttributeType.NormalY)
                                 {
-                                    stride.WriteInFormat(normals[normalIndex][1], ref bytePtr, allAttributes[attributeIndex].stridePiece.Format);
+                                    stride.WriteInFormat(normals[normalIndex][1], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
                                 if (allAttributes[attributeIndex].attributeType == AttributeType.NormalZ)
                                 {
-                                    stride.WriteInFormat(normals[normalIndex][2], ref bytePtr, allAttributes[attributeIndex].stridePiece.Format);
+                                    stride.WriteInFormat(normals[normalIndex][2], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
                             }
                         }

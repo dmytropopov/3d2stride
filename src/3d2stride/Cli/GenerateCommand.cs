@@ -1,18 +1,19 @@
 ﻿using System.CommandLine;
+using StrideGenerator.Services;
 
-namespace StrideGenerator.Services;
+namespace StrideGenerator.Cli;
 
 public class GenerateCommand : RootCommand
 {
     private readonly GlobalOptions _globalOptions;
     private readonly IGenerator _generator;
-    private readonly IConsole _console;
+    private readonly Services.IConsole _console;
 
-    public GenerateCommand(IGenerator generator, IConsole console, GlobalOptions globalOptions)
+    public GenerateCommand(IGenerator generator, Services.IConsole console, GlobalOptions globalOptions)
         : base("Generate output stride/indices files")
     {
-        var supportedAttributesHelpText = String.Join(Environment.NewLine, OutputAttributes.AttributesInfos.Select(s => $"  - {s.Key}: {s.Value.HelpText}"));
-        var supportedFormatsHelpText = String.Join(Environment.NewLine, OutputAttributes.AttributeFormats.Select(s => $"  - {s.Key}: {s.Value.HelpText}, {OutputAttributes.FormatSizes[s.Value.AttributeFormat]} byte(s)."));
+        var supportedAttributesHelpText = string.Join(Environment.NewLine, CliConstants.AttributeInfos.Select(s => $"  - {s.Key}: {s.Value.HelpText}"));
+        var supportedFormatsHelpText = string.Join(Environment.NewLine, CliConstants.FormatInfos.Select(s => $"  - {s.Key}: {s.Value.HelpText}, {Constants.FormatSizes[s.Value.AttributeFormat]} byte(s)."));
 
         _globalOptions = globalOptions;
         _generator = generator;
@@ -106,13 +107,13 @@ Supported formats:
             var outputSettings = new OutputSettings()
             {
                 FileName = outputOptionValue!,
-                OutputAttributes = OutputAttributes.Parse(strideOptionValue!),
+                StrideMap = StrideParameterParser.Parse(strideOptionValue!),
                 MergeObjects = mergeOptionValue,
                 Alignment = alignOptionValue
             };
-            int strideSize = outputSettings.OutputAttributes.GetStrideSize();
+            int strideSize = outputSettings.GetStrideSize();
 
-            var strideFormat = string.Join(',', outputSettings.OutputAttributes.StrideMap.Select(sp => $"{string.Join('+', sp.AttributeTypes.Select(at => OutputAttributes.AttributesInfos.Single(ai => ai.Value.AttributeType == at).Key))}{sp.InputIndex}:{OutputAttributes.AttributeFormats.Single(af => af.Value.AttributeFormat == sp.Format).Key}"));
+            var strideFormat = string.Join(',', outputSettings.StrideMap.Select(sp => $"{string.Join('+', sp.AttributeTypes.Select(at => CliConstants.AttributeInfos.Single(ai => ai.Value.AttributeType == at).Key))}{sp.InputIndex}:{CliConstants.FormatInfos.Single(af => af.Value.AttributeFormat == sp.Format).Key}"));
             _console.WriteLine($"Stride: {strideSize} byte(s) {strideFormat}");
 
             if (string.IsNullOrEmpty(outputSettings.FileName))
