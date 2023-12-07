@@ -16,7 +16,7 @@ public sealed class MeshOptimizer(IConsole console)
         Stopwatch sw = new();
         sw.Start();
 
-        SortedList<Stride, Stride> sorted = [];
+        SortedSet<Stride> sorted = [];
         SortedSet<Stride> resorted = new(new StrideOriginalIndexComparer());
         foreach (var stride in meshObject.Strides)
         {
@@ -27,10 +27,10 @@ public sealed class MeshOptimizer(IConsole console)
             }
             else
             {
-                sorted.Add(stride, stride);
+                sorted.Add(stride);
                 resorted.Add(stride);
             }
-            stride.Index = sorted.IndexOfKey(stride);
+            //stride.Index = sorted.IndexOfKey(stride);
         }
 
         var i = 0;
