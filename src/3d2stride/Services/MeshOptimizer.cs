@@ -17,7 +17,7 @@ public sealed class MeshOptimizer(IConsole console)
         sw.Start();
 
         SortedList<Stride, Stride> sorted = [];
-        SortedList<Stride, Stride> resorted = new(new StrideOriginalIndexComparer());
+        SortedSet<Stride> resorted = new(new StrideOriginalIndexComparer());
         foreach (var stride in meshObject.Strides)
         {
             var exists = sorted.TryGetValue(stride, out var existingSorted);
@@ -28,20 +28,21 @@ public sealed class MeshOptimizer(IConsole console)
             else
             {
                 sorted.Add(stride, stride);
-                resorted.Add(stride, stride);
+                resorted.Add(stride);
             }
             stride.Index = sorted.IndexOfKey(stride);
         }
 
+        var i = 0;
         foreach (var stride in resorted)
         {
-            stride.Value.Index = resorted.IndexOfKey(stride.Value);
+            stride.Index = i++;
         }
 
         var optimizedMesh = new MeshObject()
         {
             Name = meshObject.Name,
-            Strides = resorted.Select(s=>s.Value).ToList(),
+            Strides = resorted,
             Faces = meshObject.Faces
         };
 

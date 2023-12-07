@@ -119,7 +119,9 @@ public sealed class ObjReader(IConsole console) : IInputReader
                         s.OriginalIndexInFace = Array.IndexOf(face.Strides, s);
                         s.OriginalIndex = currentObject.Strides.Count + i++;
                     }
-                    currentObject.Strides.AddRange(strides);
+                    currentObject.Strides.Add(strides[0]);
+                    currentObject.Strides.Add(strides[1]);
+                    currentObject.Strides.Add(strides[2]);
                     currentObject.Faces.Add(face);
                 }
                 else
