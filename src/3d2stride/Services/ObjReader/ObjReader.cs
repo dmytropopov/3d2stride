@@ -138,10 +138,12 @@ public sealed class ObjReader(IConsole console) : IInputReader
 
                     wordSpan = wordSpan[nextIndex..];
                     faceSpan = wordSpan.FirstSplit('/', out nextIndex);
-                    var uvIndex = int.Parse(faceSpan, NumberStyles.None, CultureInfo.InvariantCulture) - 1;
+                    int.TryParse(faceSpan, NumberStyles.None, CultureInfo.InvariantCulture, out var uvIndex);
+                    uvIndex--;
 
                     wordSpan = wordSpan[nextIndex..];
-                    var normalIndex = int.Parse(wordSpan, NumberStyles.None, CultureInfo.InvariantCulture) - 1;
+                    int.TryParse(wordSpan, NumberStyles.None, CultureInfo.InvariantCulture, out var normalIndex);
+                    normalIndex--;
 
                     var stride = strides[si];
                     unsafe
