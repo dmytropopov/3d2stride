@@ -140,14 +140,22 @@ public sealed class ObjReader(IConsole console) : IInputReader
                     var faceSpan = wordSpan.FirstSplit('/', out var nextIndex);
                     var vertexIndex = int.Parse(faceSpan, NumberStyles.None, CultureInfo.InvariantCulture) - 1;
 
-                    wordSpan = wordSpan[nextIndex..];
-                    faceSpan = wordSpan.FirstSplit('/', out nextIndex);
-                    int.TryParse(faceSpan, NumberStyles.None, CultureInfo.InvariantCulture, out var uvIndex);
-                    uvIndex--;
+                    int uvIndex = -1;
+                    if (nextIndex > -1)
+                    {
+                        wordSpan = wordSpan[nextIndex..];
+                        faceSpan = wordSpan.FirstSplit('/', out nextIndex);
+                        int.TryParse(faceSpan, NumberStyles.None, CultureInfo.InvariantCulture, out uvIndex);
+                        uvIndex--;
+                    }
 
-                    wordSpan = wordSpan[nextIndex..];
-                    int.TryParse(wordSpan, NumberStyles.None, CultureInfo.InvariantCulture, out var normalIndex);
-                    normalIndex--;
+                    int normalIndex = -1;
+                    if (nextIndex > -1)
+                    {
+                        wordSpan = wordSpan[nextIndex..];
+                        int.TryParse(wordSpan, NumberStyles.None, CultureInfo.InvariantCulture, out normalIndex);
+                        normalIndex--;
+                    }
 
                     var stride = strides[si];
                     unsafe
