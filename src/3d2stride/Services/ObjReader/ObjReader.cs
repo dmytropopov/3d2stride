@@ -10,9 +10,9 @@ namespace StrideGenerator.Services.Obj;
 public sealed class ObjReader(IConsole console) : IInputReader
 {
     private readonly IConsole _console = console;
-    private readonly List<float[]> vertices = new(65536);
-    private readonly List<float[]> normals = new(65536);
-    private readonly List<float[]> uvs = new(65536);
+    private List<float[]> vertices = null!;
+    private List<float[]> normals = null!;
+    private List<float[]> uvs = null!;
     private bool _readNormals;
     private bool _readVertices;
     private bool _readUVs;
@@ -21,6 +21,10 @@ public sealed class ObjReader(IConsole console) : IInputReader
 
     public Task ReadInput(List<MeshObject> meshes, InputSettings inputData, List<StridePiece> stridePieces, bool mergeObjects, int strideSize)
     {
+        vertices = new(65536);
+        normals = new(65536);
+        uvs = new(65536);
+
         var commentSpan = "#".AsSpan();
         var vSpan = "v".AsSpan();
         var VSpan = "V".AsSpan();

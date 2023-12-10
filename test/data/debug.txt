@@ -3,3 +3,5 @@
 -i:d:\Work\3d2stride\test\data\bird_0.obj -i:d:\Work\3d2stride\test\data\bird_1.obj -i:d:\Work\3d2stride\test\data\bird_0.obj -o:d:\Work\3d2stride\test\data\bird --stride VT0:HF,U1:NUB -m -a:8
 
 -i:d:\Work\3d2stride\test\data\Alpaca35.obj --stride VT0:F -m -a:8
+
+-i:d:\Work\3d2stride\test\data\Alpaca.obj --stride VT0:F
