@@ -45,7 +45,7 @@ Example: E0+VTX0+VTY0+VTZ0:SI2101010,UV0:F
 Supported attributes:
 {supportedAttributesHelpText}
 <input-index> is zero-based.
-Supported formats:
+Supported output formats:
 {supportedFormatsHelpText}
 ",
             IsRequired = true,
