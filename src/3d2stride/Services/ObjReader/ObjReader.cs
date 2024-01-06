@@ -97,6 +97,7 @@ public sealed class ObjReader(IConsole console) : IInputReader
                     }
                     else if (i == 1)
                     {
+                        // TODO refactor to Processing
                         arr[i] = 1.0f - (float)FastDoubleParser.ParseDouble(wordSpan);
                     }
                 }
@@ -156,6 +157,8 @@ public sealed class ObjReader(IConsole console) : IInputReader
                         int.TryParse(wordSpan, NumberStyles.None, CultureInfo.InvariantCulture, out normalIndex);
                         normalIndex--;
                     }
+
+                    // TODO call Processing service here agains raw (float) data
 
                     var stride = strides[si];
                     unsafe

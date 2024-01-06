@@ -14,6 +14,7 @@ public class GenerateCommand : RootCommand
     {
         var supportedAttributesHelpText = string.Join(Environment.NewLine, CliConstants.AttributeInfos.Select(s => $"  - {s.Key}: {s.Value.HelpText}"));
         var supportedFormatsHelpText = string.Join(Environment.NewLine, CliConstants.FormatInfos.Select(s => $"  - {s.Key}: {s.Value.HelpText}, {Constants.FormatSizes[s.Value.AttributeFormat]} byte(s)."));
+        var supportedProcessingsHelpText = string.Join(Environment.NewLine, CliConstants.ProcessingInfos.Select(s => $"  - {s.Key}: {s.Value.HelpText}"));
 
         _globalOptions = globalOptions;
         _generator = generator;
@@ -38,9 +39,9 @@ public class GenerateCommand : RootCommand
         var strideOption = new Option<string>("--stride")
         {
             Description = @$"Output stride format, separated by comma:
-  <attribute><input-index>:<format>.
+  <attribute><input-index>:<format>
 Bit-packed formats can have multiple attributes inside, separated by '+' sign:
-  <attribute><input-index>[+<attribute><input-index>...+<attribute><input-index>]:<format>.
+  <attribute><input-index>[+<attribute><input-index>...+<attribute><input-index>]:<format>
 Example: E0+VTX0+VTY0+VTZ0:SI2101010,UV0:F
 Supported attributes:
 {supportedAttributesHelpText}
@@ -52,6 +53,20 @@ Supported output formats:
             AllowMultipleArgumentsPerToken = true,
         };
         strideOption.AddAlias("-s");
+
+        var processOption = new Option<string>("--process")
+        {
+            Description = @$"Atttibute processing:
+  <attribute><input-index>:<processing>
+Example: N0:N,V0:OM
+Processing types:
+{supportedProcessingsHelpText}
+<input-index> is zero-based.
+",
+            IsRequired = false,
+            AllowMultipleArgumentsPerToken = false,
+        };
+        strideOption.AddAlias("-p");
 
         var alignOption = new Option<int>("--align")
         {
@@ -83,6 +98,7 @@ Supported output formats:
         AddOption(inputOption);
         AddOption(outputOption);
         AddOption(strideOption);
+        AddOption(processOption);
         AddOption(alignOption);
         AddOption(mergeOption);
         AddOption(verbosityOption);
@@ -92,6 +108,7 @@ Supported output formats:
             var outputOptionValue = context.ParseResult.GetValueForOption(outputOption);
             var inputOptionValue = context.ParseResult.GetValueForOption(inputOption);
             var strideOptionValue = context.ParseResult.GetValueForOption(strideOption);
+            var processOptionValue = context.ParseResult.GetValueForOption(processOption);
             var mergeOptionValue = context.ParseResult.GetValueForOption(mergeOption);
             var alignOptionValue = context.ParseResult.GetValueForOption(alignOption);
             var verbosityOptionValue = context.ParseResult.GetValueForOption(verbosityOption);

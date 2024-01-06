@@ -31,4 +31,12 @@ public static class CliConstants
         { "SI2101010", new( AttributeFormat.SI2101010, "GL_INT_2_10_10_10. Not implemented yet." ) },
         { "SI2101010R", new( AttributeFormat.SI2101010R, "GL_INT_2_10_10_10_REV. Not implemented yet." ) }
     };
+
+    public static readonly Dictionary<string, (ProcessingType ProcesingType, string HelpText)> ProcessingInfos = new()
+    {
+        { "NORMV3", new(ProcessingType.NormalizeVec3, $"Normalize vec3") },
+        { "NORM", new(ProcessingType.NormalizeFloat, $"Normalize float") },
+        { "NEG", new( ProcessingType.Negate, "Negate") },
+        { "ONEMIN", new( ProcessingType.OneMinus, "One minus (1 - <attibute-value>)") }
+    };
 }
