@@ -23,20 +23,27 @@ public static class CliConstants
     public static readonly Dictionary<string, (AttributeFormat AttributeFormat, string HelpText)> FormatInfos = new()
     {
         { "F", new(AttributeFormat.Float, $"Float") },
-        { "HF", new( AttributeFormat.HalfFloat, "Half-Float") },
-        { "NUB", new( AttributeFormat.NormalizedUnsignedByte, "Normalized Unsigned Byte") },
-        { "NSB", new( AttributeFormat.NormalizedSignedByte, "Normalized Signed Byte") },
-        { "UB", new( AttributeFormat.UnsignedByte, "Unsigned Byte") },
-        { "SB", new( AttributeFormat.SignedByte, "Signed Byte") },
-        { "SI2101010", new( AttributeFormat.SI2101010, "GL_INT_2_10_10_10. Not implemented yet." ) },
-        { "SI2101010R", new( AttributeFormat.SI2101010R, "GL_INT_2_10_10_10_REV. Not implemented yet." ) }
+        { "HF", new(AttributeFormat.HalfFloat, "Half-Float") },
+        { "NUB", new(AttributeFormat.NormalizedUnsignedByte, "Normalized Unsigned Byte") },
+        { "NSB", new(AttributeFormat.NormalizedSignedByte, "Normalized Signed Byte") },
+        { "UB", new(AttributeFormat.UnsignedByte, "Unsigned Byte") },
+        { "SB", new(AttributeFormat.SignedByte, "Signed Byte") },
+        { "SI2101010", new(AttributeFormat.SI2101010, "GL_INT_2_10_10_10. Not implemented yet." ) },
+        { "SI2101010R", new(AttributeFormat.SI2101010R, "GL_INT_2_10_10_10_REV. Not implemented yet." ) }
     };
 
     public static readonly Dictionary<string, (ProcessingType ProcesingType, string HelpText)> ProcessingInfos = new()
     {
         { "NORMV3", new(ProcessingType.NormalizeVec3, $"Normalize vec3") },
-        { "NORM", new(ProcessingType.NormalizeFloat, $"Normalize float") },
-        { "NEG", new( ProcessingType.Negate, "Negate") },
-        { "ONEMIN", new( ProcessingType.OneMinus, "One minus (1 - <attibute-value>)") }
+        //{ "NORM", new(ProcessingType.NormalizeFloat, $"Normalize float") },
+        { "NEG", new(ProcessingType.Negate, "Negate") },
+        { "ONEMIN", new(ProcessingType.OneMinus, "One minus (1 - <attibute-value>)") }
+    };
+
+    public static readonly Dictionary<string, (IndexFormat IndexFormat, string HelpText)> IndexFormatInfos = new()
+    {
+        { "B", new(IndexFormat.Byte, $"Byte") },
+        { "S", new(IndexFormat.Short, $"Short") },
+        { "I", new(IndexFormat.Integer, "Integer") }
     };
 }

@@ -12,9 +12,10 @@ public class GenerateCommand : RootCommand
     public GenerateCommand(IGenerator generator, Services.IConsole console, GlobalOptions globalOptions)
         : base("Generate output stride/indices files")
     {
-        var supportedAttributesHelpText = string.Join(Environment.NewLine, CliConstants.AttributeInfos.Select(s => $"  - {s.Key}: {s.Value.HelpText}"));
-        var supportedFormatsHelpText = string.Join(Environment.NewLine, CliConstants.FormatInfos.Select(s => $"  - {s.Key}: {s.Value.HelpText}, {Constants.FormatSizes[s.Value.AttributeFormat]} byte(s)."));
-        var supportedProcessingsHelpText = string.Join(Environment.NewLine, CliConstants.ProcessingInfos.Select(s => $"  - {s.Key}: {s.Value.HelpText}"));
+        var supportedAttributesHelpText = GenerateSupportedEnumsHelpText(CliConstants.AttributeInfos, x => x.HelpText);
+        var supportedFormatsHelpText = GenerateSupportedEnumsHelpText(CliConstants.FormatInfos, x => $"{x.HelpText}, {Constants.FormatSizes[x.AttributeFormat]} {(Constants.FormatSizes[x.AttributeFormat] == 1 ? "byte" : "bytes")}.");
+        var supportedProcessingsHelpText = GenerateSupportedEnumsHelpText(CliConstants.ProcessingInfos, x => x.HelpText);
+        var supportedIndexFormatsHelpText = GenerateSupportedEnumsHelpText(CliConstants.IndexFormatInfos, x => x.HelpText);
 
         _globalOptions = globalOptions;
         _generator = generator;
@@ -68,6 +69,17 @@ Processing types:
         };
         strideOption.AddAlias("-p");
 
+        var indexFormatOption = new Option<string>("--index-format")
+        {
+            Description = @$"Output index format:
+{supportedIndexFormatsHelpText}
+",
+            IsRequired = false,
+            AllowMultipleArgumentsPerToken = false,
+        };
+        indexFormatOption.AddAlias("-if");
+        indexFormatOption.SetDefaultValue("S");
+
         var alignOption = new Option<int>("--align")
         {
             Description = "Output stride alignment. 0 for no alignment",
@@ -99,6 +111,7 @@ Processing types:
         AddOption(outputOption);
         AddOption(strideOption);
         AddOption(processOption);
+        AddOption(indexFormatOption);
         AddOption(alignOption);
         AddOption(mergeOption);
         AddOption(verbosityOption);
@@ -109,6 +122,7 @@ Processing types:
             var inputOptionValue = context.ParseResult.GetValueForOption(inputOption);
             var strideOptionValue = context.ParseResult.GetValueForOption(strideOption);
             var processOptionValue = context.ParseResult.GetValueForOption(processOption);
+            var indexFormatOptionValue = context.ParseResult.GetValueForOption(indexFormatOption);
             var mergeOptionValue = context.ParseResult.GetValueForOption(mergeOption);
             var alignOptionValue = context.ParseResult.GetValueForOption(alignOption);
             var verbosityOptionValue = context.ParseResult.GetValueForOption(verbosityOption);
@@ -140,5 +154,10 @@ Processing types:
 
             await _generator.Generate(inputSettings, outputSettings);
         });
+    }
+
+    private static string GenerateSupportedEnumsHelpText<T>(Dictionary<string, T> dictionary, Func<T, string> helpTextFunc)
+    {
+        return string.Join(Environment.NewLine, dictionary.Select(s => $"  {s.Key}: {helpTextFunc(s.Value)}"));
     }
 }
