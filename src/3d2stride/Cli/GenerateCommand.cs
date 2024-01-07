@@ -67,7 +67,7 @@ Processing types:
             IsRequired = false,
             AllowMultipleArgumentsPerToken = false,
         };
-        strideOption.AddAlias("-p");
+        processOption.AddAlias("-p");
 
         var indexFormatOption = new Option<string>("--index-format")
         {
@@ -139,12 +139,13 @@ Processing types:
             {
                 FileName = outputOptionValue!,
                 StrideMap = StrideParameterParser.Parse(strideOptionValue!),
+                ProcessingMap = ProcessingParameterParser.Parse(processOptionValue!),
                 MergeObjects = mergeOptionValue,
                 Alignment = alignOptionValue
             };
             int strideSize = outputSettings.GetStrideSize();
 
-            var strideFormat = string.Join(',', outputSettings.StrideMap.Select(sp => $"{string.Join('+', sp.AttributeTypes.Select(at => CliConstants.AttributeInfos.Single(ai => ai.Value.AttributeType == at).Key))}{sp.InputIndex}:{CliConstants.FormatInfos.Single(af => af.Value.AttributeFormat == sp.Format).Key}"));
+            var strideFormat = string.Join(',', outputSettings.StrideMap.Select(sp => $"{string.Join('+', sp.AttributeTypes.Select(at => CliConstants.AttributeInfos.Single(ai => ai.Value.AttributeComponentType == at).Key))}{sp.InputIndex}:{CliConstants.FormatInfos.Single(af => af.Value.AttributeFormat == sp.Format).Key}"));
             _console.WriteLine($"Stride: {strideSize} byte(s) {strideFormat}");
 
             if (string.IsNullOrEmpty(outputSettings.FileName))

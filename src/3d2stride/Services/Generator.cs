@@ -18,12 +18,13 @@ public sealed class Generator(InputReaderFactory inputReaderFactory, IOutputWrit
         // If there are multiple objects in input file, write them all and use object names as output file names
         foreach (var inputSettings in inputs)
         {
-            var stridePiecesForOneInputFile = outputSettings.StrideMap.Where(w => w.InputIndex == inputIndex).ToList();
+            var stridePiecesPerInput = outputSettings.StrideMap.Where(w => w.InputIndex == inputIndex).ToArray();
+            var processingPiecesPerInput = outputSettings.ProcessingMap.Where(w => w.InputIndex == inputIndex).ToArray();
 
-            if (stridePiecesForOneInputFile.Count != 0)
+            if (stridePiecesPerInput.Length != 0)
             {
                 var reader = _inputReaderFactory.GetReader(inputSettings.FileFormat);
-                await reader.ReadInput(meshes, inputSettings, stridePiecesForOneInputFile, outputSettings.MergeObjects, outputSettings.GetStrideSize());
+                await reader.ReadInput(meshes, inputSettings, stridePiecesPerInput, processingPiecesPerInput, outputSettings.MergeObjects, outputSettings.GetStrideSize());
             }
             else
             {

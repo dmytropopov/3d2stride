@@ -20,4 +20,16 @@ public static class Constants
         { AttributeFormat.SI2101010, 4 },
         { AttributeFormat.SI2101010R, 4 }
     };
+
+    public static readonly Dictionary<AttributeComponentType, AttributeType> AttributeTypes = new()
+    {
+        { AttributeComponentType.VertexX, AttributeType.Vertex },
+        { AttributeComponentType.VertexY, AttributeType.Vertex },
+        { AttributeComponentType.VertexZ, AttributeType.Vertex },
+        { AttributeComponentType.NormalX, AttributeType.Normal },
+        { AttributeComponentType.NormalY, AttributeType.Normal },
+        { AttributeComponentType.NormalZ, AttributeType.Normal },
+        { AttributeComponentType.TextureCoordU, AttributeType.TextureCoordinate },
+        { AttributeComponentType.TextureCoordV, AttributeType.TextureCoordinate }
+    };
 }

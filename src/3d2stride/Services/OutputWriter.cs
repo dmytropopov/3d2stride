@@ -31,7 +31,7 @@ public sealed class OutputWriter(IConsole console, MeshOptimizer meshOptimizer) 
                 : outputSettings.Alignment % outputSettings.GetStrideSize()]
             : [];
 
-        // TODO take into account IndeFormat
+        // TODO take into account IndexFormat
         int i = 0;
         foreach (var optimized in meshes.Select(_meshOptimizer.GetOptimized))
         {

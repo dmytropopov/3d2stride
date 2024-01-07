@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using Open.Text;
 using System.Runtime.CompilerServices;
+using System;
 
 namespace StrideGenerator.Services.Obj;
 
@@ -19,7 +20,7 @@ public sealed class ObjReader(IConsole console) : IInputReader
     private int _attributesCount;
     private bool _meshesExist;
 
-    public Task ReadInput(List<MeshObject> meshes, InputSettings inputData, List<StridePiece> stridePieces, bool mergeObjects, int strideSize)
+    public Task ReadInput(List<MeshObject> meshes, InputSettings inputData, StridePiece[] stridePieces, ProcessingPiece[] processingPieces, bool mergeObjects, int strideSize)
     {
         vertices = new(65536);
         normals = new(65536);
@@ -39,10 +40,18 @@ public sealed class ObjReader(IConsole console) : IInputReader
         var objectSpan = "object".AsSpan();
 
         var allAttributes = stridePieces.SelectMany(s => s.AttributeTypes, (stridePiece, attributeType) => new { stridePiece, attributeType }).ToArray();
-        _readVertices = allAttributes.Any(x => x.attributeType == AttributeType.VertexX || x.attributeType == AttributeType.VertexY || x.attributeType == AttributeType.VertexZ);
-        _readUVs = allAttributes.Any(x => x.attributeType == AttributeType.TextureCoordU || x.attributeType == AttributeType.TextureCoordV);
-        _readNormals = allAttributes.Any(x => x.attributeType == AttributeType.NormalX || x.attributeType == AttributeType.NormalY || x.attributeType == AttributeType.NormalZ);
+        _readVertices = allAttributes.Any(x => x.attributeType == AttributeComponentType.VertexX || x.attributeType == AttributeComponentType.VertexY || x.attributeType == AttributeComponentType.VertexZ);
+        _readUVs = allAttributes.Any(x => x.attributeType == AttributeComponentType.TextureCoordU || x.attributeType == AttributeComponentType.TextureCoordV);
+        _readNormals = allAttributes.Any(x => x.attributeType == AttributeComponentType.NormalX || x.attributeType == AttributeComponentType.NormalY || x.attributeType == AttributeComponentType.NormalZ);
         _attributesCount = allAttributes.Length;
+
+        var vertexProcessing = processingPieces.Where(w => w.AttributeType == AttributeType.Vertex).ToArray();
+        var normalProcessing = processingPieces.Where(w => w.AttributeType == AttributeType.Normal).ToArray();
+        var uvProcessing = processingPieces.Where(w => w.AttributeType == AttributeType.TextureCoordinate).ToArray();
+
+        bool processVertices = vertexProcessing.Length > 0;
+        bool processNormals = normalProcessing.Length > 0;
+        bool processUVs = uvProcessing.Length > 0;
 
         _meshesExist = meshes.Count > 0;
 
@@ -73,6 +82,11 @@ public sealed class ObjReader(IConsole console) : IInputReader
                     lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
                     arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
                 }
+
+                if (processVertices)
+                {
+                    StrideDataProcessor.Process(arr, vertexProcessing);
+                }
                 vertices.Add(arr);
             }
             else if (_readNormals && (verb.SequenceEqual(vnSpan) || verb.SequenceEqual(VNSpan)))
@@ -83,6 +97,11 @@ public sealed class ObjReader(IConsole console) : IInputReader
                     lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
                     arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
                 }
+
+                if (processNormals)
+                {
+                    StrideDataProcessor.Process(arr, normalProcessing);
+                }
                 normals.Add(arr);
             }
             else if (_readUVs && (verb.SequenceEqual(vtSpan) || verb.SequenceEqual(VTSpan)))
@@ -91,15 +110,12 @@ public sealed class ObjReader(IConsole console) : IInputReader
                 for (var i = 0; i < 2; i++)
                 {
                     lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
-                    if (i == 0)
-                    {
-                        arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
-                    }
-                    else if (i == 1)
-                    {
-                        // TODO refactor to Processing
-                        arr[i] = 1.0f - (float)FastDoubleParser.ParseDouble(wordSpan);
-                    }
+                    arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
+                }
+
+                if (processUVs)
+                {
+                    StrideDataProcessor.Process(arr, uvProcessing);
                 }
                 uvs.Add(arr);
             }
@@ -156,9 +172,12 @@ public sealed class ObjReader(IConsole console) : IInputReader
                         wordSpan = wordSpan[nextIndex..];
                         int.TryParse(wordSpan, NumberStyles.None, CultureInfo.InvariantCulture, out normalIndex);
                         normalIndex--;
-                    }
 
-                    // TODO call Processing service here agains raw (float) data
+                        if (processNormals)
+                        {
+                            StrideDataProcessor.Process(normals[normalIndex], normalProcessing);
+                        }
+                    }
 
                     var stride = strides[si];
                     unsafe
@@ -169,35 +188,35 @@ public sealed class ObjReader(IConsole console) : IInputReader
                             {
                                 byte* bytePtr = (byte*)ptr + allAttributes[attributeIndex].stridePiece.Offset;
 
-                                if (allAttributes[attributeIndex].attributeType == AttributeType.VertexX)
+                                if (allAttributes[attributeIndex].attributeType == AttributeComponentType.VertexX)
                                 {
                                     stride.WriteInFormat(vertices[vertexIndex][0], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
-                                if (allAttributes[attributeIndex].attributeType == AttributeType.VertexY)
+                                if (allAttributes[attributeIndex].attributeType == AttributeComponentType.VertexY)
                                 {
                                     stride.WriteInFormat(vertices[vertexIndex][1], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
-                                if (allAttributes[attributeIndex].attributeType == AttributeType.VertexZ)
+                                if (allAttributes[attributeIndex].attributeType == AttributeComponentType.VertexZ)
                                 {
                                     stride.WriteInFormat(vertices[vertexIndex][2], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
-                                if (allAttributes[attributeIndex].attributeType == AttributeType.TextureCoordU)
+                                if (allAttributes[attributeIndex].attributeType == AttributeComponentType.TextureCoordU)
                                 {
                                     stride.WriteInFormat(uvs[uvIndex][0], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
-                                if (allAttributes[attributeIndex].attributeType == AttributeType.TextureCoordV)
+                                if (allAttributes[attributeIndex].attributeType == AttributeComponentType.TextureCoordV)
                                 {
                                     stride.WriteInFormat(uvs[uvIndex][1], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
-                                if (allAttributes[attributeIndex].attributeType == AttributeType.NormalX)
+                                if (allAttributes[attributeIndex].attributeType == AttributeComponentType.NormalX)
                                 {
                                     stride.WriteInFormat(normals[normalIndex][0], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
-                                if (allAttributes[attributeIndex].attributeType == AttributeType.NormalY)
+                                if (allAttributes[attributeIndex].attributeType == AttributeComponentType.NormalY)
                                 {
                                     stride.WriteInFormat(normals[normalIndex][1], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }
-                                if (allAttributes[attributeIndex].attributeType == AttributeType.NormalZ)
+                                if (allAttributes[attributeIndex].attributeType == AttributeComponentType.NormalZ)
                                 {
                                     stride.WriteInFormat(normals[normalIndex][2], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
                                 }

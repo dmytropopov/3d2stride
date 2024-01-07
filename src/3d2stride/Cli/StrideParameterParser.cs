@@ -35,13 +35,13 @@ public static partial class StrideParameterParser
 
                     if (attributeInfo.TransformsTo == null)
                     {
-                        AddAttribute(result, attributeInfo.AttributeType, index, attributeFormat, ref offset);
+                        AddAttribute(result, attributeInfo.AttributeComponentType, index, attributeFormat, ref offset);
                     }
                     else
                     {
                         foreach (var transform in attributeInfo.TransformsTo)
                         {
-                            AddAttribute(result, CliConstants.AttributeInfos[transform].AttributeType, index, attributeFormat, ref offset);
+                            AddAttribute(result, CliConstants.AttributeInfos[transform].AttributeComponentType, index, attributeFormat, ref offset);
                         }
                     }
                 }
@@ -59,10 +59,10 @@ public static partial class StrideParameterParser
         return result;
     }
 
-    private static void AddAttribute(List<StridePiece> result, AttributeType attributeType, int inputIndex, (AttributeFormat AttributeFormat, string HelpText) attributeFormat, ref int offset)
+    private static void AddAttribute(List<StridePiece> result, AttributeComponentType attributeComponentType, int inputIndex, (AttributeFormat AttributeFormat, string HelpText) attributeFormat, ref int offset)
     {
         var sizeInBytes = Constants.FormatSizes[attributeFormat.AttributeFormat];
-        result.Add(new(attributeFormat.AttributeFormat, sizeInBytes, inputIndex, offset, [attributeType /*bit-packed attribute formats not parsed yet*/ ]));
+        result.Add(new(attributeFormat.AttributeFormat, sizeInBytes, inputIndex, offset, [attributeComponentType /*bit-packed attribute formats not parsed yet*/ ]));
         offset += sizeInBytes;
     }
 }

@@ -2,7 +2,7 @@
   "profiles": {
     "3d2stride": {
       "commandName": "Project",
-      "commandLineArgs": "-i:d:\\Work\\3d2stride\\test\\data\\Alpaca.obj --stride VT0:HF -m -a:8"
+      "commandLineArgs": "-i:d:\\Work\\3d2stride\\test\\data\\lanhoso.obj --stride VT0:F,UV0:F -p U0:NEG,U0:NEG,V0:NEG,V0:NEG,V0:ONEMIN"
     }
   }
 }
