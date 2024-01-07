@@ -5,3 +5,5 @@
 -i:d:\Work\3d2stride\test\data\Alpaca35.obj --stride VT0:F -m -a:8
 
 -i:d:\Work\3d2stride\test\data\Alpaca.obj --stride VT0:F
+
+-i:d:\Work\3d2stride\test\data\lanhoso.obj --stride VT0:F,UV0:HF
