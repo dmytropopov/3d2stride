@@ -30,7 +30,7 @@ public static partial class ProcessingParameterParser
 
                         if (!CliConstants.ProcessingInfos.TryGetValue(processingType, out var processingInfo))
                         {
-                            throw new NotImplementedException("Output format not recognized: " + processingType);
+                            throw new NotImplementedException("Procesing type not recognized: " + processingType);
                         }
 
                         result.Add(new(inputIndex, processingInfo.ProcesingType, attributeInfo.AttributeType, attributeInfo.DataIndex));
