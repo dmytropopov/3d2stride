@@ -59,7 +59,7 @@ Supported output formats:
         {
             Description = @$"Atttibute processing:
   <attribute><input-index>:<processing>
-Example: N0:N,V0:OM
+Example: N0:NORMV3,V0:ONEMIN
 Processing types:
 {supportedProcessingsHelpText}
 <input-index> is zero-based.

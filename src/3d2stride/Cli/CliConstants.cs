@@ -42,6 +42,7 @@ public static class CliConstants
 
     public static readonly Dictionary<string, (IndexFormat IndexFormat, string HelpText)> IndexFormatInfos = new()
     {
+        { "A", new(IndexFormat.Byte, $"Auto (smallest)") },
         { "B", new(IndexFormat.Byte, $"Byte") },
         { "S", new(IndexFormat.Short, $"Short") },
         { "I", new(IndexFormat.Integer, "Integer") }

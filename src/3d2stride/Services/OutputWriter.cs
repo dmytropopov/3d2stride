@@ -10,6 +10,8 @@ public sealed class OutputWriter(IConsole console, MeshOptimizer meshOptimizer) 
 
     public Task Write(IEnumerable<MeshObject> meshes, IEnumerable<InputSettings> inputs, OutputSettings outputSettings)
     {
+        // TODO move file naming, alignment code to OutputWriterBase
+        // TODO redesign for other/multiple output writers e.g. JsonOutputWriter
         var inputFileName = Path.ChangeExtension(inputs.First().FileName, "").TrimEnd('.');
         if (meshes.Count() > 1 && !(outputSettings.FileName?.Contains('{') ?? false))
         {
@@ -29,6 +31,7 @@ public sealed class OutputWriter(IConsole console, MeshOptimizer meshOptimizer) 
                 : outputSettings.Alignment % outputSettings.GetStrideSize()]
             : [];
 
+        // TODO take into account IndeFormat
         int i = 0;
         foreach (var optimized in meshes.Select(_meshOptimizer.GetOptimized))
         {
