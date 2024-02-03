@@ -39,10 +39,10 @@ public sealed class ObjReader(IConsole console) : IInputReader
         var FSpan = "F".AsSpan();
         var objectSpan = "object".AsSpan();
 
-        var allAttributes = stridePieces.SelectMany(s => s.AttributeTypes, (stridePiece, attributeType) => new { stridePiece, attributeType }).ToArray();
-        _readVertices = allAttributes.Any(x => x.attributeType == AttributeComponentType.VertexX || x.attributeType == AttributeComponentType.VertexY || x.attributeType == AttributeComponentType.VertexZ);
-        _readUVs = allAttributes.Any(x => x.attributeType == AttributeComponentType.TextureCoordU || x.attributeType == AttributeComponentType.TextureCoordV);
-        _readNormals = allAttributes.Any(x => x.attributeType == AttributeComponentType.NormalX || x.attributeType == AttributeComponentType.NormalY || x.attributeType == AttributeComponentType.NormalZ);
+        var allAttributes = stridePieces.SelectMany(s => s.AttributeTypesPerInput, (stridePiece, FormatComponent) => new { stridePiece, FormatComponent }).ToArray();
+        _readVertices = allAttributes.Any(x => x.FormatComponent.AttributeComponentType == AttributeComponentType.VertexX || x.FormatComponent.AttributeComponentType == AttributeComponentType.VertexY || x.FormatComponent.AttributeComponentType == AttributeComponentType.VertexZ);
+        _readUVs = allAttributes.Any(x => x.FormatComponent.AttributeComponentType == AttributeComponentType.TextureCoordU || x.FormatComponent.AttributeComponentType == AttributeComponentType.TextureCoordV);
+        _readNormals = allAttributes.Any(x => x.FormatComponent.AttributeComponentType == AttributeComponentType.NormalX || x.FormatComponent.AttributeComponentType == AttributeComponentType.NormalY || x.FormatComponent.AttributeComponentType == AttributeComponentType.NormalZ);
         _attributesCount = allAttributes.Length;
 
         var vertexProcessing = processingPieces.Where(w => w.AttributeType == AttributeType.Vertex).ToArray();
@@ -186,39 +186,41 @@ public sealed class ObjReader(IConsole console) : IInputReader
                         {
                             for (int attributeIndex = 0; attributeIndex < _attributesCount; attributeIndex++)
                             {
+                                var attributeComponent = allAttributes[attributeIndex];
+
                                 byte* bytePtr = (byte*)ptr + allAttributes[attributeIndex].stridePiece.Offset;
 
-                                if (allAttributes[attributeIndex].attributeType == AttributeComponentType.VertexX)
+                                if (attributeComponent.FormatComponent.AttributeComponentType == AttributeComponentType.VertexX)
                                 {
-                                    stride.WriteInFormat(vertices[vertexIndex][0], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
+                                    stride.WriteInFormat(vertices[vertexIndex][0], bytePtr, allAttributes[attributeIndex].stridePiece.Format, allAttributes[attributeIndex].FormatComponent.DataPosition);
                                 }
-                                if (allAttributes[attributeIndex].attributeType == AttributeComponentType.VertexY)
+                                if (attributeComponent.FormatComponent.AttributeComponentType == AttributeComponentType.VertexY)
                                 {
-                                    stride.WriteInFormat(vertices[vertexIndex][1], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
+                                    stride.WriteInFormat(vertices[vertexIndex][1], bytePtr, allAttributes[attributeIndex].stridePiece.Format, allAttributes[attributeIndex].FormatComponent.DataPosition);
                                 }
-                                if (allAttributes[attributeIndex].attributeType == AttributeComponentType.VertexZ)
+                                if (attributeComponent.FormatComponent.AttributeComponentType == AttributeComponentType.VertexZ)
                                 {
-                                    stride.WriteInFormat(vertices[vertexIndex][2], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
+                                    stride.WriteInFormat(vertices[vertexIndex][2], bytePtr, allAttributes[attributeIndex].stridePiece.Format, allAttributes[attributeIndex].FormatComponent.DataPosition);
                                 }
-                                if (allAttributes[attributeIndex].attributeType == AttributeComponentType.TextureCoordU)
+                                if (attributeComponent.FormatComponent.AttributeComponentType == AttributeComponentType.TextureCoordU)
                                 {
-                                    stride.WriteInFormat(uvs[uvIndex][0], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
+                                    stride.WriteInFormat(uvs[uvIndex][0], bytePtr, allAttributes[attributeIndex].stridePiece.Format, allAttributes[attributeIndex].FormatComponent.DataPosition);
                                 }
-                                if (allAttributes[attributeIndex].attributeType == AttributeComponentType.TextureCoordV)
+                                if (attributeComponent.FormatComponent.AttributeComponentType == AttributeComponentType.TextureCoordV)
                                 {
-                                    stride.WriteInFormat(uvs[uvIndex][1], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
+                                    stride.WriteInFormat(uvs[uvIndex][1], bytePtr, allAttributes[attributeIndex].stridePiece.Format, allAttributes[attributeIndex].FormatComponent.DataPosition);
                                 }
-                                if (allAttributes[attributeIndex].attributeType == AttributeComponentType.NormalX)
+                                if (attributeComponent.FormatComponent.AttributeComponentType == AttributeComponentType.NormalX)
                                 {
-                                    stride.WriteInFormat(normals[normalIndex][0], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
+                                    stride.WriteInFormat(normals[normalIndex][0], bytePtr, allAttributes[attributeIndex].stridePiece.Format, allAttributes[attributeIndex].FormatComponent.DataPosition);
                                 }
-                                if (allAttributes[attributeIndex].attributeType == AttributeComponentType.NormalY)
+                                if (attributeComponent.FormatComponent.AttributeComponentType == AttributeComponentType.NormalY)
                                 {
-                                    stride.WriteInFormat(normals[normalIndex][1], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
+                                    stride.WriteInFormat(normals[normalIndex][1], bytePtr, allAttributes[attributeIndex].stridePiece.Format, allAttributes[attributeIndex].FormatComponent.DataPosition);
                                 }
-                                if (allAttributes[attributeIndex].attributeType == AttributeComponentType.NormalZ)
+                                if (attributeComponent.FormatComponent.AttributeComponentType == AttributeComponentType.NormalZ)
                                 {
-                                    stride.WriteInFormat(normals[normalIndex][2], bytePtr, allAttributes[attributeIndex].stridePiece.Format);
+                                    stride.WriteInFormat(normals[normalIndex][2], bytePtr, allAttributes[attributeIndex].stridePiece.Format, allAttributes[attributeIndex].FormatComponent.DataPosition);
                                 }
                             }
                         }

@@ -11,4 +11,6 @@ public enum AttributeFormat
     SignedByte,
     SI2101010,
     SI2101010R,
+    UI2101010,
+    UI2101010R,
 }

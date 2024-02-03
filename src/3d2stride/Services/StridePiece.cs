@@ -2,7 +2,9 @@
 
 namespace StrideGenerator.Services;
 
-public readonly record struct StridePiece(AttributeFormat Format, int TotalSize, int InputIndex, int Offset, AttributeComponentType[] AttributeTypes);
+public record FormatComponent(int InputIndex, int DataPosition, AttributeComponentType AttributeComponentType);
+
+public readonly record struct StridePiece(AttributeFormat Format, int TotalSize, int Offset, List<FormatComponent> AttributeTypesPerInput);
 
 public record struct OutputSettings(string FileName, List<StridePiece> StrideMap, List<ProcessingPiece> ProcessingMap, bool MergeObjects, int Alignment)
 {

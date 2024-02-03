@@ -4,5 +4,5 @@ namespace StrideGenerator.Services;
 
 public interface IOutputWriter
 {
-    Task Write(IEnumerable<MeshObject> meshes, IEnumerable<InputSettings> inputs, OutputSettings outputSettings);
+    Task Write(List<MeshObject> meshes, IEnumerable<InputSettings> inputs, OutputSettings outputSettings);
 }

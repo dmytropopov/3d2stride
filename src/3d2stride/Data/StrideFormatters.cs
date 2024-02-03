@@ -1,11 +1,12 @@
-﻿using System.Runtime.CompilerServices;
+﻿using StrideGenerator.Services;
+using System.Runtime.CompilerServices;
 
 namespace StrideGenerator.Data;
 
 public sealed partial class Stride
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe void WriteInFormat(float data, byte* bytePtr, AttributeFormat attributeFormat)
+    public unsafe void WriteInFormat(float data, byte* bytePtr, AttributeFormat attributeFormat, int dataPosition)
     {
         switch (attributeFormat)
         {
@@ -27,7 +28,31 @@ public sealed partial class Stride
             case AttributeFormat.SignedByte:
                 WriteUnsignedByte(data, bytePtr);
                 break;
+            case AttributeFormat.SI2101010:
+                WriteSI2101010(data, bytePtr, dataPosition);
+                break;
+            case AttributeFormat.SI2101010R:
+                break;
+            case AttributeFormat.UI2101010:
+                break;
+            case AttributeFormat.UI2101010R:
+                break;
         };
+    }
+
+    private unsafe void WriteSI2101010(float data, byte* bytePtr, int dataPosition)
+    {
+        switch (dataPosition)
+        {
+            case 0: // 2 bits
+                break;
+            case 1: // 10 bits
+                break;
+            case 2: // 10 bits
+                break;
+            case 3: // 10 bits
+                break;
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

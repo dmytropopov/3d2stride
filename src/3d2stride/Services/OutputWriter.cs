@@ -3,12 +3,11 @@ using System.Diagnostics;
 
 namespace StrideGenerator.Services;
 
-public sealed class OutputWriter(IConsole console, MeshOptimizer meshOptimizer) : IOutputWriter
+public sealed class OutputWriter(IConsole console) : IOutputWriter
 {
     private readonly IConsole _console = console;
-    private readonly MeshOptimizer _meshOptimizer = meshOptimizer;
 
-    public Task Write(IEnumerable<MeshObject> meshes, IEnumerable<InputSettings> inputs, OutputSettings outputSettings)
+    public Task Write(List<MeshObject> meshes, IEnumerable<InputSettings> inputs, OutputSettings outputSettings)
     {
         // TODO move file naming, alignment code to OutputWriterBase
         // TODO redesign for other/multiple output writers e.g. JsonOutputWriter
@@ -33,18 +32,19 @@ public sealed class OutputWriter(IConsole console, MeshOptimizer meshOptimizer) 
 
         // TODO take into account IndexFormat
         int i = 0;
-        foreach (var optimized in meshes.Select(_meshOptimizer.GetOptimized))
+        foreach (var mesh in meshes)
         {
-            var fileName = GetFileName(outputSettings, i++, optimized.Name ?? "");
-            _console.WriteLine($"Writing object {optimized.Name} to file {fileName}");
+            var fileName = GetFileName(outputSettings, i++, mesh.Name ?? "");
+            _console.WriteLine($"Writing object {mesh.Name} to file {fileName}");
 
             using var stridesStream = File.Open(Path.ChangeExtension(fileName + "-strides", "bin"), FileMode.Create);
             using var stridesWriter = new BinaryWriter(stridesStream);
             using var indicesStream = File.Open(Path.ChangeExtension(fileName + "-indices", "bin"), FileMode.Create);
             using var indicesWriter = new BinaryWriter(indicesStream);
 
-            foreach (var stride in optimized.Strides)
+            foreach (var stride in mesh.Strides)
             {
+                // TODO support different index formats: byte, long etc. verify stride.length to fit into index format
                 stridesWriter.Write(stride.Data);
                 if (outputSettings.Alignment != 0)
                 {
@@ -52,10 +52,11 @@ public sealed class OutputWriter(IConsole console, MeshOptimizer meshOptimizer) 
                 }
             }
 
-            foreach (var face in optimized.Faces)
+            foreach (var face in mesh.Faces)
             {
                 foreach (var stride in face.Strides)
                 {
+                    // TODO support different index formats: byte, long etc. verify stride.length to fit into index format
                     indicesWriter.Write((ushort)stride.Index);
                 }
             }

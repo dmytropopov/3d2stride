@@ -1,4 +1,5 @@
 ﻿using System.CommandLine;
+using StrideGenerator.Data;
 using StrideGenerator.Services;
 
 namespace StrideGenerator.Cli;
@@ -50,8 +51,7 @@ Supported attributes:
 Supported output formats:
 {supportedFormatsHelpText}
 ",
-            IsRequired = true,
-            AllowMultipleArgumentsPerToken = true,
+            IsRequired = true
         };
         strideOption.AddAlias("-s");
 
@@ -64,8 +64,7 @@ Processing types:
 {supportedProcessingsHelpText}
 <input-index> is zero-based.
 ",
-            IsRequired = false,
-            AllowMultipleArgumentsPerToken = false,
+            IsRequired = false
         };
         processOption.AddAlias("-p");
 
@@ -74,8 +73,7 @@ Processing types:
             Description = @$"Output index format:
 {supportedIndexFormatsHelpText}
 ",
-            IsRequired = false,
-            AllowMultipleArgumentsPerToken = false,
+            IsRequired = false
         };
         indexFormatOption.AddAlias("-if");
         indexFormatOption.SetDefaultValue("S");
@@ -83,8 +81,7 @@ Processing types:
         var alignOption = new Option<int>("--align")
         {
             Description = "Output stride alignment. 0 for no alignment",
-            IsRequired = false,
-            AllowMultipleArgumentsPerToken = true,
+            IsRequired = false
         };
         alignOption.SetDefaultValue(4);
         alignOption.AddAlias("-a");
@@ -92,17 +89,22 @@ Processing types:
         var mergeOption = new Option<bool>("--merge")
         {
             Description = "Merge all objects in input to one output",
-            IsRequired = false,
-            AllowMultipleArgumentsPerToken = true,
+            IsRequired = false
         };
         mergeOption.SetDefaultValue(false);
         mergeOption.AddAlias("-m");
 
+        var boundingBoxOutputOption = new Option<BoundingBoxOutputType>("--bounding-box-output")
+        {
+            Description = "Bounding box output",
+            IsRequired = false
+        };
+        boundingBoxOutputOption.AddAlias("-bbo");
+
         var verbosityOption = new Option<Verbosity>("--verbosity")
         {
             Description = "Verbosity",
-            IsRequired = false,
-            AllowMultipleArgumentsPerToken = true,
+            IsRequired = false
         };
         verbosityOption.SetDefaultValue(Verbosity.Normal);
         verbosityOption.AddAlias("-v");
@@ -114,6 +116,7 @@ Processing types:
         AddOption(indexFormatOption);
         AddOption(alignOption);
         AddOption(mergeOption);
+        AddOption(boundingBoxOutputOption);
         AddOption(verbosityOption);
 
         this.SetHandler(async (context) =>
@@ -145,7 +148,7 @@ Processing types:
             };
             int strideSize = outputSettings.GetStrideSize();
 
-            var strideFormat = string.Join(',', outputSettings.StrideMap.Select(sp => $"{string.Join('+', sp.AttributeTypes.Select(at => CliConstants.AttributeInfos.Single(ai => ai.Value.AttributeComponentType == at).Key))}{sp.InputIndex}:{CliConstants.FormatInfos.Single(af => af.Value.AttributeFormat == sp.Format).Key}"));
+            var strideFormat = string.Join(',', outputSettings.StrideMap.Select(StridePieceToString));
             _console.WriteLine($"Stride: {strideSize} byte(s) {strideFormat}");
 
             if (string.IsNullOrEmpty(outputSettings.FileName))
@@ -161,4 +164,8 @@ Processing types:
     {
         return string.Join(Environment.NewLine, dictionary.Select(s => $"  {s.Key}: {helpTextFunc(s.Value)}"));
     }
+
+    private static string StridePieceToString(StridePiece stridePiece) => $"{AttributeTypesToString(stridePiece.AttributeTypesPerInput)}:{CliConstants.FormatInfos.Single(af => af.Value.AttributeFormat == stridePiece.Format).Key}({stridePiece.Offset})";
+
+    private static string AttributeTypesToString(List<FormatComponent> attributeTypesPerInput) => string.Join("+", attributeTypesPerInput.Select(x => $"{CliConstants.AttributeInfos.Single(ai => ai.Value.AttributeComponentType == x.AttributeComponentType).Key}{x.InputIndex}"));
 }
