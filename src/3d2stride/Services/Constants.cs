@@ -18,7 +18,9 @@ public static class Constants
         { AttributeFormat.UnsignedByte, sizeof(byte) },
         { AttributeFormat.SignedByte, sizeof(byte) },
         { AttributeFormat.SI2101010, 4 },
-        { AttributeFormat.SI2101010R, 4 }
+        { AttributeFormat.SI2101010R, 4 },
+        { AttributeFormat.UI2101010, 4 },
+        { AttributeFormat.UI2101010R, 4 }
     };
 
     public static readonly Dictionary<AttributeComponentType, AttributeType> AttributeTypes = new()

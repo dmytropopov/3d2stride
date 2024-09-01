@@ -21,11 +21,12 @@ public sealed class Generator(InputReaderFactory inputReaderFactory, IOutputWrit
         {
             var stridePiecesPerInput = outputSettings.StrideMap.Where(w => w.AttributeTypesPerInput.Any(x => x.InputIndex == inputIndex)).ToArray();
             var processingPiecesPerInput = outputSettings.ProcessingMap.Where(w => w.InputIndex == inputIndex).ToArray();
+            int strideSize = outputSettings.GetStrideSize();
 
             if (stridePiecesPerInput.Length != 0)
             {
                 var reader = _inputReaderFactory.GetReader(inputSettings.FileFormat);
-                await reader.ReadInput(meshes, inputSettings, stridePiecesPerInput, processingPiecesPerInput, outputSettings.MergeObjects, outputSettings.GetStrideSize());
+                await reader.ReadInput(meshes, inputSettings, stridePiecesPerInput, processingPiecesPerInput, outputSettings.MergeObjects, strideSize);
             }
             else
             {

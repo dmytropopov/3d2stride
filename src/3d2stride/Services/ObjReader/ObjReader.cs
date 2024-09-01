@@ -4,16 +4,16 @@ using System.Diagnostics;
 using System.Globalization;
 using Open.Text;
 using System.Runtime.CompilerServices;
-using System;
 
 namespace StrideGenerator.Services.Obj;
 
-public sealed class ObjReader(IConsole console) : IInputReader
+public sealed class ObjReader(IConsole console, ITextFileReader fileReader) : IInputReader
 {
     private readonly IConsole _console = console;
-    private List<float[]> vertices = null!;
-    private List<float[]> normals = null!;
-    private List<float[]> uvs = null!;
+    private readonly ITextFileReader _fileReader = fileReader;
+    private List<float[]> vertices = new(65536); // TODO
+    private List<float[]> normals = new(65536); // TODO
+    private List<float[]> uvs = new(65536); // TODO
     private bool _readNormals;
     private bool _readVertices;
     private bool _readUVs;
@@ -22,9 +22,10 @@ public sealed class ObjReader(IConsole console) : IInputReader
 
     public Task ReadInput(List<MeshObject> meshes, InputSettings inputData, StridePiece[] stridePieces, ProcessingPiece[] processingPieces, bool mergeObjects, int strideSize)
     {
-        vertices = new(65536);
-        normals = new(65536);
-        uvs = new(65536);
+        // TODO
+        //vertices = new(65536);
+        //normals = new(65536);
+        //uvs = new(65536);
 
         var commentSpan = "#".AsSpan();
         var vSpan = "v".AsSpan();
@@ -63,7 +64,7 @@ public sealed class ObjReader(IConsole console) : IInputReader
         string? currentMaterialName = null;
         int currentFaceIndex = 0; // TODO: check for identical face count in secondary inputs
 
-        foreach (var line in File.ReadLines(inputData.FileName))
+        foreach (var line in _fileReader.ReadLines(inputData))
         {
             var lineSpan = line.AsSpan();
             var verb = lineSpan.FirstSplit(' ', out var lineNextIndex);

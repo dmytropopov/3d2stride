@@ -35,6 +35,7 @@ class Program
         services.AddSingleton<GenerateCommand>();
 
         services.AddSingleton<IGenerator, Generator>()
+            .AddSingleton<ITextFileReader, TextFileReader>()
             .AddSingleton<InputReaderFactory>()
             .AddSingleton<IGenerator, Generator>()
             .AddSingleton<IInputReader, ObjReader>()
