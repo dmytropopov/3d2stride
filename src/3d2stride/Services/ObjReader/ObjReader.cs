@@ -81,7 +81,7 @@ public sealed class ObjReader(IConsole console, ITextFileReader fileReader) : II
                 for (var i = 0; i < 3; i++)
                 {
                     lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
-                    arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
+                    arr[i] = FastFloatParser.ParseFloat(wordSpan);
                 }
 
                 if (processVertices)
@@ -96,7 +96,7 @@ public sealed class ObjReader(IConsole console, ITextFileReader fileReader) : II
                 for (var i = 0; i < 3; i++)
                 {
                     lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
-                    arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
+                    arr[i] = FastFloatParser.ParseFloat(wordSpan);
                 }
 
                 if (processNormals)
@@ -111,7 +111,7 @@ public sealed class ObjReader(IConsole console, ITextFileReader fileReader) : II
                 for (var i = 0; i < 2; i++)
                 {
                     lineSpan = MoveToNextWord(lineSpan, out lineNextIndex, out wordSpan);
-                    arr[i] = (float)FastDoubleParser.ParseDouble(wordSpan);
+                    arr[i] = FastFloatParser.ParseFloat(wordSpan);
                 }
 
                 if (processUVs)

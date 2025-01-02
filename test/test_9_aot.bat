@@ -1,0 +1,1 @@
+_test.bat src\3d2stride\bin\Release\net9.0\win-x64\publish\

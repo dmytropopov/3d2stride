@@ -1,0 +1,1 @@
+..\%1\3d2stride.exe -i:data\lanhoso.obj --stride VT0:F,UV0:F -p V0:ONEMIN
