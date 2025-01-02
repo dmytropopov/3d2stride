@@ -30,7 +30,6 @@ public sealed class MeshOptimizer(IConsole console)
                 sorted.Add(stride);
                 resorted.Add(stride);
             }
-            //stride.Index = sorted.IndexOfKey(stride);
         }
 
         var i = 0;
