@@ -163,16 +163,22 @@ public sealed class ObjReader(IConsole console, ITextFileReader fileReader) : II
                     {
                         wordSpan = wordSpan[nextIndex..];
                         faceSpan = wordSpan.FirstSplit('/', out nextIndex);
-                        int.TryParse(faceSpan, NumberStyles.None, CultureInfo.InvariantCulture, out uvIndex);
-                        uvIndex--;
+                        if (_readUVs)
+                        {
+                            int.TryParse(faceSpan, NumberStyles.None, CultureInfo.InvariantCulture, out uvIndex);
+                            uvIndex--;
+                        }
                     }
 
                     int normalIndex = -1;
-                    if (nextIndex > -1)
+                    if (_readNormals)
                     {
-                        wordSpan = wordSpan[nextIndex..];
-                        int.TryParse(wordSpan, NumberStyles.None, CultureInfo.InvariantCulture, out normalIndex);
-                        normalIndex--;
+                        if (nextIndex > -1)
+                        {
+                            wordSpan = wordSpan[nextIndex..];
+                            int.TryParse(wordSpan, NumberStyles.None, CultureInfo.InvariantCulture, out normalIndex);
+                            normalIndex--;
+                        }
                     }
 
                     var stride = strides[si];
