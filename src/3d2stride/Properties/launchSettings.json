@@ -2,7 +2,7 @@
   "profiles": {
     "3d2stride": {
       "commandName": "Project",
-      "commandLineArgs": "-i:d:\\Work\\3d2stride\\test\\data\\lanhoso.obj --stride VT0:F,UV0:F -p V0:ONEMIN"
+      "commandLineArgs": "-i:c:\\Github\\3d2stride\\test\\data\\lanhoso.obj --stride VT0:F,UV0:F"
     }
   }
 }

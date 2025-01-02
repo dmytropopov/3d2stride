@@ -173,11 +173,6 @@ public sealed class ObjReader(IConsole console, ITextFileReader fileReader) : II
                         wordSpan = wordSpan[nextIndex..];
                         int.TryParse(wordSpan, NumberStyles.None, CultureInfo.InvariantCulture, out normalIndex);
                         normalIndex--;
-
-                        if (processNormals)
-                        {
-                            StrideDataProcessor.Process(normals[normalIndex], normalProcessing);
-                        }
                     }
 
                     var stride = strides[si];
